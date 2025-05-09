@@ -6,10 +6,22 @@ import math
 # === PWM Setup for RGBW ===
 PWM_FREQ = 1000  # Hz
 rgbw_pins = {
-    "R": PWM(Pin(12)),
-    "G": PWM(Pin(13)),
-    "B": PWM(Pin(14)),
-    "W": PWM(Pin(15))
+    # "R": PWM(Pin(0)),
+    # "G": PWM(Pin(1)),
+    # "B": PWM(Pin(2)),
+    # "W": PWM(Pin(3))
+    "R": PWM(Pin(4)),
+    "G": PWM(Pin(5)),
+    "B": PWM(Pin(6)),
+    "W": PWM(Pin(7))
+    # "R": PWM(Pin(8)),
+    # "G": PWM(Pin(9)),
+    # "B": PWM(Pin(10)),
+    # "W": PWM(Pin(11))
+    # "R": PWM(Pin(12)),
+    # "G": PWM(Pin(13)),
+    # "B": PWM(Pin(14)),
+    # "W": PWM(Pin(15))
 }
 
 # Set frequency for all channels
@@ -40,8 +52,9 @@ def fade_rgbw_to(r_target, g_target, b_target, w_target, duration=1000, steps=50
 
 # === NeoPixel Setup ===
 MATRIX_WIDTH = 16
-MATRIX_HEIGHT = 16
+MATRIX_HEIGHT = 32
 NUM_PIXELS = MATRIX_WIDTH * MATRIX_HEIGHT
+STATE_MACHINE = 0
 np = neopixel.NeoPixel(Pin(28), NUM_PIXELS)
 
 # Helper to get linear index for serpentine wiring
@@ -57,6 +70,29 @@ def fill_matrix_color(r, g, b):
             index = get_index(x, y)
             np[index] = (r, g, b)
     np.write()
+
+def matrix_string(r, g, b):
+    for i in range(NUM_PIXELS):
+        np[i] = (r, g, b)
+        if i >= 1:
+            np[i-1] = (0,  0, 0)
+        np.write()
+        sleep (0.1)
+
+
+def matrix_snake(r, g, b):
+    for i in range(5, NUM_PIXELS):
+        np[i] = (255, 0, 0)
+        np[i-1] = (0, 255, 0)
+        np[i-2] = (0, 255, 0)
+        np[i-3] = (0, 255, 0)
+        np[i-4] = (0, 255, 0)
+
+        if i-5 >= 1:
+            np[i-5] = (0,  0, 0)
+        np.write()
+        sleep (0.1)
+
 
 def fade_matrix_to(r_target, g_target, b_target, duration=1000, steps=50):
     r0, g0, b0 = np[0]  # assuming the matrix is uniform
@@ -81,9 +117,14 @@ def main():
 
         while True:
             for color in colors:
+                print("Color: ", color)
                 r, g, b, w = color
                 fade_rgbw_to(r, g, b, w, duration=1500)
-                fade_matrix_to(r, g, b, duration=1500)
+#                fade_matrix_to(r, g, b, duration=1500)
+#                fill_matrix_color(r, g, b)
+#                matrix_snake(r, g, b)
+                fill_matrix_color(0, 0, 0)
+
                 sleep(1)
 
     except KeyboardInterrupt:

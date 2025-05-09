@@ -75,7 +75,7 @@ def fade_rgbw_to(r_target, g_target, b_target, w_target, duration=1000, steps=50
 
 #--- NeoPixel Setup ----
 MATRIX_WIDTH = 16
-MATRIX_HEIGHT = 16
+MATRIX_HEIGHT = 32
 NUM_PIXELS = MATRIX_WIDTH * MATRIX_HEIGHT
 np = neopixel.NeoPixel(Pin(28), NUM_PIXELS)
 
@@ -120,6 +120,23 @@ def fade_matrix_to(r_target, g_target, b_target, duration=1000, steps=50):
         fill_matrix_color(r, g, b)
         sleep(duration / steps / 1000)
 
+#---------------------------------------------------------------
+#--- matrix_snake
+#--- A function to make a centipede move across the matrix.
+#---------------------------------------------------------------
+def matrix_snake(r, g, b):
+    for i in range(5, NUM_PIXELS):
+        np[i] = (255, 0, 0)
+        np[i-1] = (0, 255, 0)
+        np[i-2] = (0, 255, 0)
+        np[i-3] = (0, 255, 0)
+        np[i-4] = (0, 255, 0)
+
+        if i-5 >= 1:
+            np[i-5] = (0,  0, 0)
+        np.write()
+        sleep (0.1)
+
 
 #----------------------------------------------------------------
 #--- on_rx
@@ -142,11 +159,11 @@ def on_rx(data):
 #    print("Second object: ", aSecObj)
 
     if localDict['LEDScene'] == 1:
-        set_rgbw(255, 0, 0, 0)
+        fill_matrix_color(255, 0, 0)
     elif localDict['LEDScene'] == 2:
-        set_rgbw(0, 0, 0, 0)
+        matrix_snake(0, 255, 0)
     else:
-        set_rgbw(0, 0, 0, 0)
+        fill_matrix_color(0, 0, 0)
 
 
        
