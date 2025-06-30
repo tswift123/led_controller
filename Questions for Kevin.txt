@@ -1,0 +1,5 @@
+Questions for Kevin:
+Shouldn't the dim/brighten go 100/75/50/25 instead of 100/50/25/0?  Setting a brightness
+of zero, would turn the bulb off. In which case the bulb on the app would show on but
+the physical LED would be off which would confuse the user.
+

@@ -1,27 +1,28 @@
 from machine import Pin, PWM
 from time import sleep, ticks_ms
 import neopixel
+import NeoMatrix
 import math
 
 # === PWM Setup for RGBW ===
 PWM_FREQ = 1000  # Hz
 rgbw_pins = {
-    # "R": PWM(Pin(0)),
-    # "G": PWM(Pin(1)),
-    # "B": PWM(Pin(2)),
-    # "W": PWM(Pin(3))
-    "R": PWM(Pin(4)),
-    "G": PWM(Pin(5)),
-    "B": PWM(Pin(6)),
-    "W": PWM(Pin(7))
-    # "R": PWM(Pin(8)),
-    # "G": PWM(Pin(9)),
-    # "B": PWM(Pin(10)),
-    # "W": PWM(Pin(11))
-    # "R": PWM(Pin(12)),
-    # "G": PWM(Pin(13)),
-    # "B": PWM(Pin(14)),
-    # "W": PWM(Pin(15))
+    "R": PWM(Pin(0)),
+    "G": PWM(Pin(1)),
+    "B": PWM(Pin(2)),
+    "W": PWM(Pin(3))
+    #"R": PWM(Pin(4)),
+    #"G": PWM(Pin(5)),
+    #"B": PWM(Pin(6)),
+    #"W": PWM(Pin(7))
+    #"R": PWM(Pin(8)),
+    #"G": PWM(Pin(9)),
+    #"B": PWM(Pin(10)),
+    #"W": PWM(Pin(11))
+    #"R": PWM(Pin(12)),
+    #"G": PWM(Pin(13)),
+    #"B": PWM(Pin(14)),
+    #"W": PWM(Pin(15))
 }
 
 # Set frequency for all channels
@@ -119,11 +120,12 @@ def main():
             for color in colors:
                 print("Color: ", color)
                 r, g, b, w = color
-                fade_rgbw_to(r, g, b, w, duration=1500)
+#                fade_rgbw_to(r, g, b, w, duration=1500)
 #                fade_matrix_to(r, g, b, duration=1500)
 #                fill_matrix_color(r, g, b)
 #                matrix_snake(r, g, b)
-                fill_matrix_color(0, 0, 0)
+                matrix_string(r, g, b)
+#                fill_matrix_color(0, 0, 0)
 
                 sleep(1)
 

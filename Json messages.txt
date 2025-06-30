@@ -1,0 +1,37 @@
+Json messages:
+
+LED set:
+	{ctrl#: {"R": value, "G": value, "B": value, "W": value}}
+	Where ctrl# is one of "Ctrl1" through "Ctrl4"
+	value is the RGBW value from 0 to 255.  The white value should
+	mutually exclusive of the RGB values.  In the case of RGB+1, 
+	the extra light should be indicated by a 0 or 255 in the white
+	channel to signify off or on.  In the 4Channel case, the "R", 
+	"G", "B", and "W" values correspond to the 4 channels and can
+	contain either a 0 or 255 to signify off or on.
+	e.g. {"Ctrl1": {"R": 127, "G": 127, "B": 0, "W": 0})
+	
+brightness:
+	{ctrl#: {"chan1Index": ndx, "chan2Index": ndx, "chan3Index": ndx, "chan4Index": ndx}} 
+	Where ctrl# is one of "Ctrl1Dim" through "Ctrl4Dim"
+	ndx is a number between 0 and 3.
+	e.g. (Ctrl1: (chan1Index: 3, chan2Index: 3, chan3Index: 3, chan4Index: 3), Ctrl2: {chan1Index: 0, chan2Index: 1, chan3Index: 2, chan4Index: 3}}
+
+Configuration:
+	{ctrl#: {"Name": name, "Type": type, "ChanNames": {"Chan1Name": c1Name, "Chan2Name": c2Name, "Chan3Name": c3Name, "Chan4Name": c4Name}}}
+	Where ctrl# is one of "Ctrl1Cfg", through "Ctrl4Cfg'
+	name is a custom name provided by the user
+	type is one of "RGBW", "RGB+1", or "4Channel"
+	c1Name through C4Name are custom names provided by the user
+	e.g. {"Ctrl1": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Chan1", "Chan2Name": "Chan2", "Chan3Name": "Chan3", "Chan4Name": "Chan4"}}, "Ctrl2": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}, "Ctrl3": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}, "Ctrl4": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}}
+	
+Scene Selection:
+	{scene#: value}
+	Where scene# is one of "Scene1" through "Scene4"
+	Value is either "On" or "Off"
+	e.g. {"Scene1": "On"}
+	
+Scene Configuration:
+	{scene#: name}
+	Where scene# is one of "Scene1Cfg" through "Scene4Cfg"
+	name is the custom name the user entered.

@@ -1,0 +1,9 @@
+Corrections to Kevin's design document:
+
+1) I believe that the RGB color wheel will show white as a possible selection.
+If so, the RGBW screen will be different from the RGB + 1 screen.  The RGBW
+screen will  not have a separate bulb and dimmer wheel.
+
+2) If the color wheel shows white, add a guard band around the white values
+such that inside the guard band, white is full value and R, G, and B are zero.
+
