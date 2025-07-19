@@ -83,8 +83,14 @@ rgbw_brightness = {
 #--- convert them to the duty cycle for the LED
 #--- channels and set the values into the LED.
 #------------------------------------------------
-def set_rgbw(ctrlNum, r, g, b, w):
-    if ctrlNum == "Ctrl1":
+#def set_rgbw(ctrlNum, r, g, b, w):
+def set_rgbw(ledData):
+    if 1 in ledData:
+        r = ledData[1]["1R"]
+        g = ledData[1]["1G"]
+        b = ledData[1]["1B"]
+        w = ledData[1]["1W"]
+
         #--- Brightness ratios
         mulr = LED_Dimmer_multiply_Array[rgbw_brightness["1R"]]
         divr = LED_Dimmer_divide_Array[rgbw_brightness["1R"]]
@@ -98,8 +104,14 @@ def set_rgbw(ctrlNum, r, g, b, w):
         rgbw_pins["1R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
         rgbw_pins["1G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
         rgbw_pins["1B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
+
         rgbw_pins["1W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
-    elif ctrlNum == "Ctrl2":
+    elif 2 in ledData:
+        r = ledData[2]["2R"]
+        g = ledData[2]["2G"]
+        b = ledData[2]["2B"]
+        w = ledData[2]["2W"]
+
         #--- Brightness ratios
         mulr = LED_Dimmer_multiply_Array[rgbw_brightness["2R"]]
         divr = LED_Dimmer_divide_Array[rgbw_brightness["2R"]]
@@ -114,7 +126,7 @@ def set_rgbw(ctrlNum, r, g, b, w):
         rgbw_pins["2G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
         rgbw_pins["2B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
         rgbw_pins["2W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
-    elif ctrlNum == "Ctrl3":
+    elif 3 in ledData:
         #--- Brightness ratios
         mulr = LED_Dimmer_multiply_Array[rgbw_brightness["3R"]]
         divr = LED_Dimmer_divide_Array[rgbw_brightness["3R"]]
@@ -241,8 +253,6 @@ def save_config(data):
 
     config_file_path = "config.json"
 
-    localDict = {}
-
     filePath = config_file_path
     try:
         with open(filePath, "w") as file:
@@ -330,6 +340,7 @@ def save_scene_config(sceneID, SceneName, filePath):
 #----------------------------------------------------------------
 def save_scene(data):
     if "Scene1Cfg" in data:
+        print("Found save scene 1")
         config_file_path = "Scene1.json"
         aName = data["Scene1Cfg"]
         save_scene_config("Scene1", aName, config_file_path)
@@ -422,6 +433,115 @@ def read_config():
 
 
 #----------------------------------------------------------------
+#--- set_a_scene
+#--- Once the scene data has been read from a file, this function
+#--- takes the data and sets all of the brightness and LED values.
+#---
+#----------------------------------------------------------------
+def set_a_scene(data):
+    dims = {}
+    dims = data["dims"]
+    rgbw_brightness["1R"] = dims["1R"]
+    rgbw_brightness["1G"] = dims["1G"]
+    rgbw_brightness["1B"] = dims["1B"]
+    rgbw_brightness["1W"] = dims["1W"]
+    rgbw_brightness["2R"] = dims["2R"]
+    rgbw_brightness["2G"] = dims["2G"]
+    rgbw_brightness["2B"] = dims["2B"]
+    rgbw_brightness["2W"] = dims["2W"]
+    rgbw_brightness["3R"] = dims["3R"]
+    rgbw_brightness["3G"] = dims["3G"]
+    rgbw_brightness["3B"] = dims["3B"]
+    rgbw_brightness["3W"] = dims["3W"]
+    rgbw_brightness["4R"] = dims["4R"]
+    rgbw_brightness["4G"] = dims["4G"]
+    rgbw_brightness["4B"] = dims["4B"]
+    rgbw_brightness["4W"] = dims["4W"]
+
+    ledValues = data["ledValues"]
+    rgbw_pins["1R"] = ledValues["1R"]
+    rgbw_pins["1G"] = ledValues["1G"]
+    rgbw_pins["1B"] = ledValues["1B"]
+    rgbw_pins["1W"] = ledValues["1W"]
+    rgbw_pins["2R"] = ledValues["2R"]
+    rgbw_pins["2G"] = ledValues["2G"]
+    rgbw_pins["2B"] = ledValues["2B"]
+    rgbw_pins["2W"] = ledValues["2W"]
+    rgbw_pins["3R"] = ledValues["3R"]
+    rgbw_pins["3G"] = ledValues["3G"]
+    rgbw_pins["3B"] = ledValues["3B"]
+    rgbw_pins["3W"] = ledValues["3W"]
+    rgbw_pins["4R"] = ledValues["4R"]
+    rgbw_pins["4G"] = ledValues["4G"]
+    rgbw_pins["4B"] = ledValues["4B"]
+    rgbw_pins["4W"] = ledValues["4W"]
+
+
+#----------------------------------------------------------------
+#--- load_scene
+#--- Figure out the scene number from the passed in data and then
+#--- retrieve that scene from a file and turn on the LEDs.
+#---
+#----------------------------------------------------------------
+def load_scene(sceneNum):
+
+    if sceneNum == 1:
+        print("Found save scene 1")
+        config_file_path = "Scene1.json"
+
+    if sceneNum == 2:
+        config_file_path = "Scene2.json"
+
+    if sceneNum == 3:
+        config_file_path = "Scene3.json"
+
+    if sceneNum == 4:
+        config_file_path = "Scene4.json"
+
+
+    sceneData = {}
+
+    filePath = config_file_path
+    try:
+        with open(filePath, "r") as file:
+            sceneData = ujson.load(file)
+            set_a_scene(sceneData)
+
+    except OSError:
+        #--- Failed to open file for read so no
+        #--- scene data has been saved. Nothing
+        #--- to do.
+#        print("Failed to open config file for write")
+        pass
+    finally:
+        if 'file' in locals():
+            file.close()
+
+
+#----------------------------------------------------------------
+#--- all_off
+#--- Turn all LEDs off.
+#---
+#----------------------------------------------------------------
+def all_off():
+    ledData = {}
+    ledValues = {}
+    ledValues["R"] = 0
+    ledValues["G"] = 0
+    ledValues["B"] = 0
+    ledValues["W"] = 0
+    ledData[1] = ledValues
+    set_rgbw(ledData)
+    ledData[2] = ledValues
+    set_rgbw(ledData)
+    ledData[3] = ledValues
+    set_rgbw(ledData)
+    ledData[4] = ledValues
+    set_rgbw(ledData)
+
+
+
+#----------------------------------------------------------------
 #--- on_rx
 #--- Define a callback function to handle received data
 #---
@@ -441,14 +561,31 @@ def on_rx(data):
 #    aSecObj = ujson.loads(dataStr)
 #    print("Second object: ", aSecObj)
 
+    if "LEDScene" in localDict:
+        load_scene(localDict["LEDScene"])
+    elif "SetLED" in localDict:
+        pass
+    elif "SendConfig" in localDict:
+        pass
+    elif "SetBrightness" in localDict:
+        pass
+    else:
+        # AllOff
+        all_off()
+
+    sceneConfig = {}
+    sceneConfig["Scene1Cfg"] = "NewScene"
+
     if localDict['LEDScene'] == 1:
         set_rgbw("Ctrl1", 255, 0, 0, 0)
         curDuty = rgbw_pins["1R"].duty_u16()
         print("Current duty: ", curDuty)
-    elif localDict['LEDScene'] == 2:
         set_rgbw("Ctrl2", 0, 255, 0, 0)
-    else:
         set_rgbw("Ctrl3", 0, 0, 255, 0)
+    elif localDict['LEDScene'] == 2:
+        load_scene("Scene1Cfg")
+    else:
+        all_off()
 
 
        
@@ -473,9 +610,9 @@ def main():
             if sp.is_connected():    # Check of a BLE connection is established
                 sp.on_write(on_rx)   # Set the callback function for data reception
 
-        print("Finished.")
 
     except KeyboardInterrupt:
+        print("Finished.")
         print("Inner except")
         set_rgbw("Ctrl1", 0, 0, 0, 0)
         set_rgbw("Ctrl2", 0, 0, 0, 0)
