@@ -15,12 +15,12 @@ brightness:
     {"SetBrightness: {ID#: {"chan1Index": ndx, "chan2Index": ndx, "chan3Index": ndx, "chan4Index": ndx}}}
 	Where ID# is a number of 1 through 4 corresponding to controller 1 through 4
 	ndx is a number between 0 and 4.  Zero shall indicate that the brightness index will
-	remain unchanged.  So for an RGBW LED, the same value will be applied to all 4 channels.
+	remain unchanged.  So for an RGBW LED, the same value should be send for all 4 channels.
 	For an RGB+1 type controller, if the user changes the brightness on the RGB LED, the
 	fourth channel (the +1) will be zero.  If the user changes the brightness on the +1
 	channel, the RGB channel indexes will be zero.  Likewise, for a 4Channel controller,
 	only one channel will have a value between 1 and 4 and the other three will be zero.
-	e.g. (Ctrl1: (chan1Index: 3, chan2Index: 3, chan3Index: 3, chan4Index: 3), Ctrl2: {chan1Index: 0, chan2Index: 1, chan3Index: 2, chan4Index: 3}}
+	e.g. (Ctrl1: (chan1Index: 3, chan2Index: 3, chan3Index: 3, chan4Index: 3), Ctrl2: {chan1Index: 0, chan2Index: 1, chan3Index: 0, chan4Index: 0}}
 
 Configuration:
     {"SendConfig": 1}
@@ -29,7 +29,19 @@ Configuration:
     The message below is the return message containing the configuration that will 
 	come to the phone app from the controller when the app first connects to the 
 	controller in order to set the types and names in the app.
-	{ctrl#: {"Name": name, "Type": type, "ChanNames": {"Chan1Name": c1Name, "Chan2Name": c2Name, "Chan3Name": c3Name, "Chan4Name": c4Name}}}
+	{"ConfigData: 
+	              {ctrl#: 
+				          {"Name": name,
+						   "Type": type,
+						   "ChanNames": 
+						                {"Chan1Name": c1Name,
+										 "Chan2Name": c2Name,
+										 "Chan3Name": c3Name,
+										 "Chan4Name": c4Name
+										}
+						  }
+				  }
+	}
 	Where ctrl# is a number from 1 to 4 corresponding to controller 1 through 4
 	name is a custom name provided by the user for the controller
 	type is one of "RGBW", "RGB+1", or "4Channel"
@@ -37,6 +49,33 @@ Configuration:
 	in each controller.  If the controller is of type RGBW, there is only one name for
 	a channel.  An RGB+1 will have 2 names, and a 4Channel will have 4 names.
 	e.g. {"Ctrl1": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Chan1", "Chan2Name": "Chan2", "Chan3Name": "Chan3", "Chan4Name": "Chan4"}}, "Ctrl2": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}, "Ctrl3": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}, "Ctrl4": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}}
+	
+Save Configuration:
+    After the user saves various names and controller types, they can save the
+	updated configuration.  The message below captures all of the configuration
+	information and sends it to the controller.
+
+	{"SaveConfig: 
+	              {ctrl#: 
+				          {"Name": name,
+						   "Type": type,
+						   "ChanNames": 
+						                {"Chan1Name": c1Name,
+										 "Chan2Name": c2Name,
+										 "Chan3Name": c3Name,
+										 "Chan4Name": c4Name
+										}
+						  }
+				  }
+	}
+	Where ctrl# is a number from 1 to 4 corresponding to controller 1 through 4
+	name is a custom name provided by the user for the controller
+	type is one of "RGBW", "RGB+1", or "4Channel"
+	c1Name through C4Name are custom names provided by the user for the four channel
+	in each controller.  If the controller is of type RGBW, there is only one name for
+	a channel.  An RGB+1 will have 2 names, and a 4Channel will have 4 names.
+	e.g. {"Ctrl1": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Chan1", "Chan2Name": "Chan2", "Chan3Name": "Chan3", "Chan4Name": "Chan4"}}, "Ctrl2": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}, "Ctrl3": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}, "Ctrl4": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}}
+	
 	
 Scene Selection:
 	{keyword: value}

@@ -77,85 +77,235 @@ rgbw_brightness = {
 }
 
 
+saved_rgbw_values = {
+    "1R": 0,
+    "1G": 0,
+    "1B": 0,
+    "1W": 0,
+    "2R": 0,
+    "2G": 0,
+    "2B": 0,
+    "2W": 0,
+    "3R": 0,
+    "3G": 0,
+    "3B": 0,
+    "3W": 0,
+    "4R": 0,
+    "4G": 0,
+    "4B": 0,
+    "4W": 0
+}
+
+
 #------------------------------------------------
 #--- set_rgbw
-#--- Take in an RGBW value in the range of 0 to 255
-#--- convert them to the duty cycle for the LED
-#--- channels and set the values into the LED.
+#--- This function sets the RGBW values for a single
+#--- Controller.  It takes in the contoller number, 
+#--- and the 4 RGBW values in the range of 0 to 255
+#--- and the brightness value of 0 to 4.  
+#--- It then converts them to the duty cycle for the 
+#--- LED channels and set the values into the LED.
+#--- This is used by the JSON parsing routine but is
+#--- primarily used by the set brightness to change
+#--- an LEDs brightness given saved values.
 #------------------------------------------------
-#def set_rgbw(ctrlNum, r, g, b, w):
-def set_rgbw(ledData):
-    if 1 in ledData:
-        r = ledData[1]["1R"]
-        g = ledData[1]["1G"]
-        b = ledData[1]["1B"]
-        w = ledData[1]["1W"]
+def set_rgbw(ctrlNum, r, g, b, w, rb, gb, bb, wb):
 
-        #--- Brightness ratios
-        mulr = LED_Dimmer_multiply_Array[rgbw_brightness["1R"]]
-        divr = LED_Dimmer_divide_Array[rgbw_brightness["1R"]]
-        mulg = LED_Dimmer_multiply_Array[rgbw_brightness["1G"]]
-        divg = LED_Dimmer_divide_Array[rgbw_brightness["1G"]]
-        mulb = LED_Dimmer_multiply_Array[rgbw_brightness["1B"]]
-        divb = LED_Dimmer_divide_Array[rgbw_brightness["1B"]]
-        mulw = LED_Dimmer_multiply_Array[rgbw_brightness["1W"]]
-        divw = LED_Dimmer_divide_Array[rgbw_brightness["1W"]]
+
+    #--- Brightness ratios
+    mulr = LED_Dimmer_multiply_Array[rb]
+    divr = LED_Dimmer_divide_Array[rb]
+    mulg = LED_Dimmer_multiply_Array[gb]
+    divg = LED_Dimmer_divide_Array[gb]
+    mulb = LED_Dimmer_multiply_Array[bb]
+    divb = LED_Dimmer_divide_Array[bb]
+    mulw = LED_Dimmer_multiply_Array[wb]
+    divw = LED_Dimmer_divide_Array[wb]
+        
+    if 1 == ctrlNum:
         # Convert 0–255 to 0–65535 duty cycle
         rgbw_pins["1R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
         rgbw_pins["1G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
         rgbw_pins["1B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
-
         rgbw_pins["1W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
-    elif 2 in ledData:
-        r = ledData[2]["2R"]
-        g = ledData[2]["2G"]
-        b = ledData[2]["2B"]
-        w = ledData[2]["2W"]
 
-        #--- Brightness ratios
-        mulr = LED_Dimmer_multiply_Array[rgbw_brightness["2R"]]
-        divr = LED_Dimmer_divide_Array[rgbw_brightness["2R"]]
-        mulg = LED_Dimmer_multiply_Array[rgbw_brightness["2G"]]
-        divg = LED_Dimmer_divide_Array[rgbw_brightness["2G"]]
-        mulb = LED_Dimmer_multiply_Array[rgbw_brightness["2B"]]
-        divb = LED_Dimmer_divide_Array[rgbw_brightness["2B"]]
-        mulw = LED_Dimmer_multiply_Array[rgbw_brightness["2W"]]
-        divw = LED_Dimmer_divide_Array[rgbw_brightness["2W"]]
+
+    if 2 == ctrlNum:
         # Convert 0–255 to 0–65535 duty cycle
         rgbw_pins["2R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
         rgbw_pins["2G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
         rgbw_pins["2B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
         rgbw_pins["2W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
-    elif 3 in ledData:
-        #--- Brightness ratios
-        mulr = LED_Dimmer_multiply_Array[rgbw_brightness["3R"]]
-        divr = LED_Dimmer_divide_Array[rgbw_brightness["3R"]]
-        mulg = LED_Dimmer_multiply_Array[rgbw_brightness["3G"]]
-        divg = LED_Dimmer_divide_Array[rgbw_brightness["3G"]]
-        mulb = LED_Dimmer_multiply_Array[rgbw_brightness["3B"]]
-        divb = LED_Dimmer_divide_Array[rgbw_brightness["3B"]]
-        mulw = LED_Dimmer_multiply_Array[rgbw_brightness["3W"]]
-        divw = LED_Dimmer_divide_Array[rgbw_brightness["3W"]]
+
+    elif 3 == ctrlNum:
         # Convert 0–255 to 0–65535 duty cycle
         rgbw_pins["3R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
         rgbw_pins["3G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
         rgbw_pins["3B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
         rgbw_pins["3W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
     else:
-        #--- Brightness ratios
-        mulr = LED_Dimmer_multiply_Array[rgbw_brightness["4R"]]
-        divr = LED_Dimmer_divide_Array[rgbw_brightness["4R"]]
-        mulg = LED_Dimmer_multiply_Array[rgbw_brightness["4G"]]
-        divg = LED_Dimmer_divide_Array[rgbw_brightness["4G"]]
-        mulb = LED_Dimmer_multiply_Array[rgbw_brightness["4B"]]
-        divb = LED_Dimmer_divide_Array[rgbw_brightness["4B"]]
-        mulw = LED_Dimmer_multiply_Array[rgbw_brightness["4W"]]
-        divw = LED_Dimmer_divide_Array[rgbw_brightness["4W"]]
         # Convert 0–255 to 0–65535 duty cycle
         rgbw_pins["4R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
         rgbw_pins["4G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
         rgbw_pins["4B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
         rgbw_pins["4W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
+
+
+
+#------------------------------------------------
+#--- set_rgbw_json
+#--- Take in a  JSON string which contains the 
+#--- contoller number, and the 4 RGBW values in 
+#--- the range of 0 to 255.  Save them and then
+#--- call the set routine using existing brightness.
+#------------------------------------------------
+def set_rgbw_json(ledData):
+    if 1 in ledData:
+        saved_rgbw_values["1R"] = ledData[1]["R"]
+        saved_rgbw_values["1G"] = ledData[1]["G"]
+        saved_rgbw_values["1B"] = ledData[1]["B"]
+        saved_rgbw_values["1W"] = ledData[1]["W"]
+
+        set_rgbw(1,
+                 saved_rgbw_values["1R"],
+                 saved_rgbw_values["1G"],
+                 saved_rgbw_values["1B"],
+                 saved_rgbw_values["1W"],
+                 rgbw_brightness["1R"],
+                 rgbw_brightness["1G"],
+                 rgbw_brightness["1B"],
+                 rgbw_brightness["1W"]
+                )
+
+    elif 2 in ledData:
+        saved_rgbw_values["2R"] = ledData[2]["R"]
+        saved_rgbw_values["2G"] = ledData[2]["G"]
+        saved_rgbw_values["2B"] = ledData[2]["B"]
+        saved_rgbw_values["2W"] = ledData[2]["W"]
+
+        set_rgbw(2,
+                 saved_rgbw_values["2R"],
+                 saved_rgbw_values["2G"],
+                 saved_rgbw_values["2B"],
+                 saved_rgbw_values["2W"],
+                 rgbw_brightness["2R"],
+                 rgbw_brightness["2G"],
+                 rgbw_brightness["2B"],
+                 rgbw_brightness["2W"]
+                )
+
+    elif 3 in ledData:
+        saved_rgbw_values["3R"] = ledData[3]["R"]
+        saved_rgbw_values["3G"] = ledData[3]["G"]
+        saved_rgbw_values["3B"] = ledData[3]["B"]
+        saved_rgbw_values["3W"] = ledData[3]["W"]
+
+        set_rgbw(3,
+                 saved_rgbw_values["3R"],
+                 saved_rgbw_values["3G"],
+                 saved_rgbw_values["3B"],
+                 saved_rgbw_values["3W"],
+                 rgbw_brightness["3R"],
+                 rgbw_brightness["3G"],
+                 rgbw_brightness["3B"],
+                 rgbw_brightness["3W"]
+                )
+
+    else:
+        saved_rgbw_values["4R"] = ledData[4]["R"]
+        saved_rgbw_values["4G"] = ledData[4]["G"]
+        saved_rgbw_values["4B"] = ledData[4]["B"]
+        saved_rgbw_values["4W"] = ledData[4]["W"]
+
+        set_rgbw(4,
+                 saved_rgbw_values["4R"],
+                 saved_rgbw_values["4G"],
+                 saved_rgbw_values["4B"],
+                 saved_rgbw_values["4W"],
+                 rgbw_brightness["4R"],
+                 rgbw_brightness["4G"],
+                 rgbw_brightness["4B"],
+                 rgbw_brightness["4W"]
+                )
+
+
+
+#------------------------------------------------
+#--- set_brightness
+#--- Take in a json string that has 4 indexes that 
+#--- correspond to the 4 channels on a given controller, 
+#--- and set the value into the array of brightnesses.  
+#--- Then set the LED with the new brightness.
+#------------------------------------------------
+def set_brightness(jsonData):
+    if 1 in jsonData:
+        rgbw_brightness["1R"] = jsonData[1]["chan1Index"]
+        rgbw_brightness["1G"] = jsonData[1]["chan2Index"]
+        rgbw_brightness["1B"] = jsonData[1]["chan3Index"]
+        rgbw_brightness["1W"] = jsonData[1]["chan4Index"]
+
+        set_rgbw(1,
+                 saved_rgbw_values["1R"],
+                 saved_rgbw_values["1G"],
+                 saved_rgbw_values["1B"],
+                 saved_rgbw_values["1W"],
+                 rgbw_brightness["1R"],
+                 rgbw_brightness["1G"],
+                 rgbw_brightness["1B"],
+                 rgbw_brightness["1W"]
+                )
+
+    if 2 in jsonData:
+        rgbw_brightness["2R"] = jsonData[2]["chan1Index"]
+        rgbw_brightness["2G"] = jsonData[2]["chan2Index"]
+        rgbw_brightness["2B"] = jsonData[2]["chan3Index"]
+        rgbw_brightness["2W"] = jsonData[2]["chan4Index"]
+
+        set_rgbw(2,
+                 saved_rgbw_values["2R"],
+                 saved_rgbw_values["2G"],
+                 saved_rgbw_values["2B"],
+                 saved_rgbw_values["2W"],
+                 rgbw_brightness["2R"],
+                 rgbw_brightness["2G"],
+                 rgbw_brightness["2B"],
+                 rgbw_brightness["2W"]
+                )
+
+    if 3 in jsonData:
+        rgbw_brightness["3R"] = jsonData[3]["chan1Index"]
+        rgbw_brightness["3G"] = jsonData[3]["chan2Index"]
+        rgbw_brightness["3B"] = jsonData[3]["chan3Index"]
+        rgbw_brightness["3W"] = jsonData[3]["chan4Index"]
+
+        set_rgbw(3,
+                 saved_rgbw_values["3R"],
+                 saved_rgbw_values["3G"],
+                 saved_rgbw_values["3B"],
+                 saved_rgbw_values["3W"],
+                 rgbw_brightness["3R"],
+                 rgbw_brightness["3G"],
+                 rgbw_brightness["3B"],
+                 rgbw_brightness["3W"]
+                )
+
+    else:
+        rgbw_brightness["4R"] = jsonData[4]["chan1Index"]
+        rgbw_brightness["4G"] = jsonData[4]["chan2Index"]
+        rgbw_brightness["4B"] = jsonData[4]["chan3Index"]
+        rgbw_brightness["4W"] = jsonData[4]["chan4Index"]
+
+        set_rgbw(4,
+                 saved_rgbw_values["4R"],
+                 saved_rgbw_values["4G"],
+                 saved_rgbw_values["4B"],
+                 saved_rgbw_values["4W"],
+                 rgbw_brightness["4R"],
+                 rgbw_brightness["4G"],
+                 rgbw_brightness["4B"],
+                 rgbw_brightness["4W"]
+                )
+
 
 
 #------------------------------------------------
@@ -175,7 +325,7 @@ def fade_rgbw_to(r_target, g_target, b_target, w_target, duration=1000, steps=50
         g = g_current + (g_target - g_current) * i // steps
         b = b_current + (b_target - b_current) * i // steps
         w = w_current + (w_target - w_current) * i // steps
-        set_rgbw("Ctrl1", r, g, b, w)
+#        set_rgbw("Ctrl1", r, g, b, w)
         sleep(duration / steps / 1000)
 
 
@@ -278,22 +428,22 @@ def save_scene_config(sceneID, SceneName, filePath):
     ledValues = {}
     ledDims = {}
 
-    ledValues["1R"] = rgbw_pins["1R"].duty_u16()
-    ledValues["1G"] = rgbw_pins["1G"].duty_u16()
-    ledValues["1B"] = rgbw_pins["1B"].duty_u16()
-    ledValues["1W"] = rgbw_pins["1W"].duty_u16()
-    ledValues["2R"] = rgbw_pins["2R"].duty_u16()
-    ledValues["2G"] = rgbw_pins["2G"].duty_u16()
-    ledValues["2B"] = rgbw_pins["2B"].duty_u16()
-    ledValues["2W"] = rgbw_pins["2W"].duty_u16()
-    ledValues["3R"] = rgbw_pins["3R"].duty_u16()
-    ledValues["3G"] = rgbw_pins["3G"].duty_u16()
-    ledValues["3B"] = rgbw_pins["3B"].duty_u16()
-    ledValues["3W"] = rgbw_pins["3W"].duty_u16()
-    ledValues["4R"] = rgbw_pins["4R"].duty_u16()
-    ledValues["4G"] = rgbw_pins["4G"].duty_u16()
-    ledValues["4B"] = rgbw_pins["4B"].duty_u16()
-    ledValues["4W"] = rgbw_pins["4W"].duty_u16()
+    ledValues["1R"] = saved_rgbw_values["1R"]
+    ledValues["1G"] = saved_rgbw_values["1G"]
+    ledValues["1B"] = saved_rgbw_values["1B"]
+    ledValues["1W"] = saved_rgbw_values["1W"]
+    ledValues["2R"] = saved_rgbw_values["2R"]
+    ledValues["2G"] = saved_rgbw_values["2G"]
+    ledValues["2B"] = saved_rgbw_values["2B"]
+    ledValues["2W"] = saved_rgbw_values["2W"]
+    ledValues["3R"] = saved_rgbw_values["3R"]
+    ledValues["3G"] = saved_rgbw_values["3G"]
+    ledValues["3B"] = saved_rgbw_values["3B"]
+    ledValues["3W"] = saved_rgbw_values["3W"]
+    ledValues["4R"] = saved_rgbw_values["4R"]
+    ledValues["4G"] = saved_rgbw_values["4G"]
+    ledValues["4B"] = saved_rgbw_values["4B"]
+    ledValues["4W"] = saved_rgbw_values["4W"]
 
     ledDims["1R"] = rgbw_brightness["1R"]
     ledDims["1G"] = rgbw_brightness["1G"]
@@ -372,6 +522,7 @@ def save_scene(data):
 def default_config_data():
 
     cfgData = {}
+    ctrlData = {}
     ctrlDef = {}
     chanNames = {}
     chanNames["Chan1Name"] = "Chan1"
@@ -382,22 +533,66 @@ def default_config_data():
     ctrlDef["Name"] = "Ctrl1"
     ctrlDef["Type"] = "RGBW"
     ctrlDef["ChanNames"] = chanNames
-    cfgData["Ctrl1"] = ctrlDef
+    ctrlData[1] = ctrlDef
 
     ctrlDef["Name"] = "Ctrl2"
     ctrlDef["Type"] = "RGBW"
     ctrlDef["ChanNames"] = chanNames
-    cfgData["Ctrl2"] = ctrlDef
+    ctrlData[2] = ctrlDef
 
     ctrlDef["Name"] = "Ctrl3"
     ctrlDef["Type"] = "RGBW"
     ctrlDef["ChanNames"] = chanNames
-    cfgData["Ctrl3"] = ctrlDef
+    ctrlData[3] = ctrlDef
 
     ctrlDef["Name"] = "Ctrl4"
     ctrlDef["Type"] = "RGBW"
     ctrlDef["ChanNames"] = chanNames
-    cfgData["Ctrl4"] = ctrlDef
+    ctrlData[4] = ctrlDef
+
+    cfgData["ConfigData"] = ctrlData
+
+    return cfgData
+
+
+#----------------------------------------------------------------
+#--- test_SaveConfig
+#--- Build a structure of config data with default names to 
+#--- emulate the message coming from the phone app.
+#---
+#----------------------------------------------------------------
+def test_SaveConfig():
+
+    cfgData = {}
+    ctrlData = {}
+    ctrlDef = {}
+    chanNames = {}
+    chanNames["Chan1Name"] = "myChan1"
+    chanNames["Chan2Name"] = "myChan2"
+    chanNames["Chan3Name"] = "myChan3"
+    chanNames["Chan4Name"] = "myChan5"
+
+    ctrlDef["Name"] = "myCtrl1"
+    ctrlDef["Type"] = "RGBW"
+    ctrlDef["ChanNames"] = chanNames
+    ctrlData[1] = ctrlDef
+
+    ctrlDef["Name"] = "myCtrl2"
+    ctrlDef["Type"] = "RGB+1"
+    ctrlDef["ChanNames"] = chanNames
+    ctrlData[2] = ctrlDef
+
+    ctrlDef["Name"] = "myCtrl3"
+    ctrlDef["Type"] = "4Channel"
+    ctrlDef["ChanNames"] = chanNames
+    ctrlData[3] = ctrlDef
+
+    ctrlDef["Name"] = "myCtrl4"
+    ctrlDef["Type"] = "4Channel"
+    ctrlDef["ChanNames"] = chanNames
+    ctrlData[4] = ctrlDef
+
+    cfgData["SaveConfig"] = ctrlData
 
     return cfgData
 
@@ -459,22 +654,69 @@ def set_a_scene(data):
     rgbw_brightness["4W"] = dims["4W"]
 
     ledValues = data["ledValues"]
-    rgbw_pins["1R"] = ledValues["1R"]
-    rgbw_pins["1G"] = ledValues["1G"]
-    rgbw_pins["1B"] = ledValues["1B"]
-    rgbw_pins["1W"] = ledValues["1W"]
-    rgbw_pins["2R"] = ledValues["2R"]
-    rgbw_pins["2G"] = ledValues["2G"]
-    rgbw_pins["2B"] = ledValues["2B"]
-    rgbw_pins["2W"] = ledValues["2W"]
-    rgbw_pins["3R"] = ledValues["3R"]
-    rgbw_pins["3G"] = ledValues["3G"]
-    rgbw_pins["3B"] = ledValues["3B"]
-    rgbw_pins["3W"] = ledValues["3W"]
-    rgbw_pins["4R"] = ledValues["4R"]
-    rgbw_pins["4G"] = ledValues["4G"]
-    rgbw_pins["4B"] = ledValues["4B"]
-    rgbw_pins["4W"] = ledValues["4W"]
+    #--- Save for later brightness adjustment
+    saved_rgbw_values["1R"] = ledValues["1R"]
+    saved_rgbw_values["1G"] = ledValues["1G"]
+    saved_rgbw_values["1B"] = ledValues["1B"]
+    saved_rgbw_values["1W"] = ledValues["1W"]
+    saved_rgbw_values["2R"] = ledValues["2R"]
+    saved_rgbw_values["2G"] = ledValues["2G"]
+    saved_rgbw_values["2B"] = ledValues["2B"]
+    saved_rgbw_values["2W"] = ledValues["2W"]
+    saved_rgbw_values["3R"] = ledValues["3R"]
+    saved_rgbw_values["3G"] = ledValues["3G"]
+    saved_rgbw_values["3B"] = ledValues["3B"]
+    saved_rgbw_values["3W"] = ledValues["3W"]
+    saved_rgbw_values["4R"] = ledValues["4R"]
+    saved_rgbw_values["4G"] = ledValues["4G"]
+    saved_rgbw_values["4B"] = ledValues["4B"]
+    saved_rgbw_values["4W"] = ledValues["4W"]
+
+    #--- Set the actual LEDs
+    set_rgbw(   1,
+                saved_rgbw_values["1R"],
+                saved_rgbw_values["1G"],
+                saved_rgbw_values["1B"],
+                saved_rgbw_values["1W"],
+                rgbw_brightness["1R"],
+                rgbw_brightness["1G"],
+                rgbw_brightness["1B"],
+                rgbw_brightness["1W"]
+            )
+    
+    set_rgbw(   2,
+                saved_rgbw_values["2R"],
+                saved_rgbw_values["2G"],
+                saved_rgbw_values["2B"],
+                saved_rgbw_values["2W"],
+                rgbw_brightness["2R"],
+                rgbw_brightness["2G"],
+                rgbw_brightness["2B"],
+                rgbw_brightness["2W"]
+            )
+
+    set_rgbw(   3,
+                saved_rgbw_values["3R"],
+                saved_rgbw_values["3G"],
+                saved_rgbw_values["3B"],
+                saved_rgbw_values["3W"],
+                rgbw_brightness["3R"],
+                rgbw_brightness["3G"],
+                rgbw_brightness["3B"],
+                rgbw_brightness["3W"]
+            )
+
+    set_rgbw(   4,
+                saved_rgbw_values["4R"],
+                saved_rgbw_values["4G"],
+                saved_rgbw_values["4B"],
+                saved_rgbw_values["4W"],
+                rgbw_brightness["4R"],
+                rgbw_brightness["4G"],
+                rgbw_brightness["4B"],
+                rgbw_brightness["4W"]
+            )
+
 
 
 #----------------------------------------------------------------
@@ -520,25 +762,107 @@ def load_scene(sceneNum):
 
 #----------------------------------------------------------------
 #--- all_off
-#--- Turn all LEDs off.
+#--- Turn all LEDs off and set brightness to max.
 #---
 #----------------------------------------------------------------
 def all_off():
-    ledData = {}
-    ledValues = {}
-    ledValues["R"] = 0
-    ledValues["G"] = 0
-    ledValues["B"] = 0
-    ledValues["W"] = 0
-    ledData[1] = ledValues
-    set_rgbw(ledData)
-    ledData[2] = ledValues
-    set_rgbw(ledData)
-    ledData[3] = ledValues
-    set_rgbw(ledData)
-    ledData[4] = ledValues
-    set_rgbw(ledData)
+    saved_rgbw_values["1R"] = 0
+    saved_rgbw_values["1G"] = 0
+    saved_rgbw_values["1B"] = 0
+    saved_rgbw_values["1W"] = 0
+    saved_rgbw_values["2R"] = 0
+    saved_rgbw_values["2G"] = 0
+    saved_rgbw_values["2B"] = 0
+    saved_rgbw_values["2W"] = 0
+    saved_rgbw_values["3R"] = 0
+    saved_rgbw_values["3G"] = 0
+    saved_rgbw_values["3B"] = 0
+    saved_rgbw_values["3W"] = 0
+    saved_rgbw_values["4R"] = 0
+    saved_rgbw_values["4G"] = 0
+    saved_rgbw_values["4B"] = 0
+    saved_rgbw_values["4W"] = 0
+    rgbw_brightness["1R"] = 4
+    rgbw_brightness["1G"] = 4
+    rgbw_brightness["1B"] = 4
+    rgbw_brightness["1W"] = 4
+    rgbw_brightness["2R"] = 4
+    rgbw_brightness["2G"] = 4
+    rgbw_brightness["2B"] = 4
+    rgbw_brightness["2W"] = 4
+    rgbw_brightness["3R"] = 4
+    rgbw_brightness["3G"] = 4
+    rgbw_brightness["3B"] = 4
+    rgbw_brightness["3W"] = 4
+    rgbw_brightness["4R"] = 4
+    rgbw_brightness["4G"] = 4
+    rgbw_brightness["4B"] = 4
+    rgbw_brightness["4W"] = 4
+    set_rgbw(1, 0, 0, 0, 0, 4, 4, 4, 4)
+    set_rgbw(2, 0, 0, 0, 0, 4, 4, 4, 4)
+    set_rgbw(3, 0, 0, 0, 0, 4, 4, 4, 4)
+    set_rgbw(4, 0, 0, 0, 0, 4, 4, 4, 4)
 
+
+
+#----------------------------------------------------------------
+#--- test_SetLED
+#--- This function build a json string that emulates what will 
+#--- come from the phone app.
+#---
+#----------------------------------------------------------------
+def test_SetLED():
+    localDict = {}
+    ledValues = {}
+
+    ledValues["R"] = 75
+    ledValues["G"] = 75
+    ledValues["B"] = 75
+    ledValues["W"] = 75
+
+    localDict[1] = ledValues
+
+    return localDict
+
+
+#----------------------------------------------------------------
+#--- test_Brightness
+#--- This function build a json string that emulates what will 
+#--- come from the phone app.
+#---
+#----------------------------------------------------------------
+def test_Brightness():
+    localDict = {}
+    ledValues = {}
+
+    ledValues["chan1Index"] = 4
+    ledValues["chan2Index"] = 3
+    ledValues["chan3Index"] = 2
+    ledValues["chan4Index"] = 1
+
+    localDict[1] = ledValues
+
+    return localDict
+
+
+#----------------------------------------------------------------
+#--- test_save_scene
+#--- This function build a json string that emulates what will 
+#--- come from the phone app.
+#---
+#----------------------------------------------------------------
+def test_SaveScene():
+    localDict = {}
+    ledValues = {}
+
+    ledValues["chan1Index"] = 4
+    ledValues["chan2Index"] = 3
+    ledValues["chan3Index"] = 2
+    ledValues["chan4Index"] = 1
+
+    localDict[1] = ledValues
+
+    return localDict
 
 
 #----------------------------------------------------------------
@@ -564,28 +888,41 @@ def on_rx(data):
     if "LEDScene" in localDict:
         load_scene(localDict["LEDScene"])
     elif "SetLED" in localDict:
-        pass
+#        localJson = localDict["SetLED"]
+        localJson = test_SetLED()
+        set_rgbw_json(localJson)
     elif "SendConfig" in localDict:
         pass
     elif "SetBrightness" in localDict:
-        pass
+#        localJson = localDict["SetBrightness"]
+        localJson = test_Brightness()
+        set_brightness(localJson)
+    elif "SaveScene" in localDict:
+#        sceneConfigData = localDict["SaveScene"]
+        sceneConfigData = test_SaveScene()
+        save_scene(sceneConfigData)
+    elif "SaveConfig" in localDict:
+        configData = localDict["SaveConfig"]
+        configData = test_SaveConfig()
+        save_config(configData)
+
     else:
         # AllOff
         all_off()
 
-    sceneConfig = {}
-    sceneConfig["Scene1Cfg"] = "NewScene"
+    # sceneConfig = {}
+    # sceneConfig["Scene1Cfg"] = "NewScene"
 
-    if localDict['LEDScene'] == 1:
-        set_rgbw("Ctrl1", 255, 0, 0, 0)
-        curDuty = rgbw_pins["1R"].duty_u16()
-        print("Current duty: ", curDuty)
-        set_rgbw("Ctrl2", 0, 255, 0, 0)
-        set_rgbw("Ctrl3", 0, 0, 255, 0)
-    elif localDict['LEDScene'] == 2:
-        load_scene("Scene1Cfg")
-    else:
-        all_off()
+    # if localDict['LEDScene'] == 1:
+    #     set_rgbw("Ctrl1", 255, 0, 0, 0)
+    #     curDuty = rgbw_pins["1R"].duty_u16()
+    #     print("Current duty: ", curDuty)
+    #     set_rgbw("Ctrl2", 0, 255, 0, 0)
+    #     set_rgbw("Ctrl3", 0, 0, 255, 0)
+    # elif localDict['LEDScene'] == 2:
+    #     load_scene("Scene1Cfg")
+    # else:
+    #     all_off()
 
 
        
@@ -614,11 +951,7 @@ def main():
     except KeyboardInterrupt:
         print("Finished.")
         print("Inner except")
-        set_rgbw("Ctrl1", 0, 0, 0, 0)
-        set_rgbw("Ctrl2", 0, 0, 0, 0)
-        set_rgbw("Ctrl3", 0, 0, 0, 0)
-        set_rgbw("Ctrl4", 0, 0, 0, 0)
-        fill_matrix_color(0, 0, 0)
+        all_off()
 
 
 if __name__ == '__main__':
