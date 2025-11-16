@@ -8,23 +8,23 @@
 #--- This app will take input from a phone app over bluetooth and
 #--- set the colors on the specified channel(s) of the controller.
 #-----------------------------------------------------------------
-from machine import Pin,PWM
+from machine import Pin,PWM,unique_id
 from utime import sleep, ticks_ms
-import bluetooth
-from ble_simple_peripheral import BLESimplePeripheral
+import ubluetooth as bluetooth
+from led_peripheral import LEDPeripheral
 import ujson
 import neopixel
 import math
-
+import ConfigObj
 
 #--- Create a Bluetooth Low Energy (BLE) object
 ble = bluetooth.BLE()
 
 #--- Create an instance of the BLESimplePeripheral class with the BLE object
-sp = BLESimplePeripheral(ble)
+ledPeripheral = LEDPeripheral(ble)
 
 #--- multiplier and divider to set brightness duty cycle
-LED_Dimmer_multiply_Array =  (4,  8,  12, 16)
+LED_Dimmer_multiply_Array =  (1,  4,  8, 16)
 LED_Dimmer_divide_Array =    (16, 16, 16, 16)
 
 Max_RGBW_Array_Index = const(8)
@@ -56,6 +56,8 @@ rgbw_pins = {
 #--- Set frequency for all channels
 for pwm in rgbw_pins.values():
     pwm.freq(PWM_FREQ)
+
+
 
 rgbw_brightness = {
     "1R": 3,
@@ -96,18 +98,156 @@ saved_rgbw_values = {
     "4W": 0
 }
 
+#--- Define an object to hold the configuration settings.
+global cfgObj
+cfgObj = ConfigObj.ConfigObj()
+
+#------------------------------------------------
+#--- set_channel_names 
+#--- This function is used to set the names of the
+#--- channels of the passed in controller number.
+#--- jsonData contains only the channel names dictionary.
+#--- jsonData is the dictionary of channel names from the 
+#--- json string.
+#------------------------------------------------
+def set_channel_names(ctrlNum, jsonData):
+    
+    #--- Since the controller number will have already
+    #--- been set, we can use that to control how the
+    #--- names will be set. For RGBW and RGB+1 types,
+    #--- put the name in the "R" channel.
+    localCtrlType = cfgObj.get_ctrl_type(ctrlNum)
+    if "RGBW" == localCtrlType:
+        if "RGBW" in jsonData:
+            cfgObj.set_channel_name(ctrlNum, 'R', jsonData["RGBW"])
+        else:
+            print("Invalid ctrl type and chan names. Type: ", localCtrlType, " Names: ", jsonData)
+
+    if "RGB+1" == localCtrlType:
+        if ("RGB" in jsonData) or ("W" in jsonData):
+            if "RGB" in jsonData:
+                cfgObj.set_channel_name(ctrlNum, 'R', jsonData["RGB"])
+            if 'W' in jsonData:
+                cfgObj.set_channel_name(ctrlNum, 'W', jsonData["W"])
+        else:
+            print("Invalid ctrl type and chan names. Type: ", localCtrlType, " Names: ", jsonData)
+
+    if "4Chan" == localCtrlType:
+        if ("R" in jsonData) or ("G" in jsonData) or ("B" in jsonData) or ("W" in jsonData):
+            if "R" in jsonData:
+                cfgObj.set_channel_name(ctrlNum, 'R', jsonData["R"])
+            if "G" in jsonData:
+                cfgObj.set_channel_name(ctrlNum, 'G', jsonData["G"])
+            if "B" in jsonData:
+                cfgObj.set_channel_name(ctrlNum, 'B', jsonData["B"])
+            if 'W' in jsonData:
+                cfgObj.set_channel_name(ctrlNum, 'W', jsonData["W"])
+        else:
+            print("Invalid ctrl type and chan names. Type: ", localCtrlType, " Names: ", jsonData)
+
+
+#------------------------------------------------
+#--- set_w
+#--- This function sets the brightness  values for a 
+#--- single controller.  The assumption is that this
+#--- is the +1 channel on an RGB+1 controller. It 
+#--- takes in the contoller number, the saved RGB
+#--- value (which should be 255), and the brightness 
+#--- value of 0 to 3.  
+#--- It then converts them to the duty cycle for the 
+#--- LED channels and set the values into the LED.
+#--- This is used by the JSON parsing routine but is
+#--- primarily used by the set brightness to change
+#--- an LEDs brightness given saved values.
+#--- rb, gb, bb, and wb are the brightness indexes.
+#------------------------------------------------
+def set_w(ctrlNum, w, wb):
+
+    #--- Brightness ratios
+    mulw = LED_Dimmer_multiply_Array[wb]
+    divw = LED_Dimmer_divide_Array[wb]
+        
+    if 1 == ctrlNum:
+        # Convert 0–255 to 0–65535 duty cycle
+        rgbw_pins["1W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
+
+
+    if 2 == ctrlNum:
+        # Convert 0–255 to 0–65535 duty cycle
+        rgbw_pins["2W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
+
+    if 3 == ctrlNum:
+        # Convert 0–255 to 0–65535 duty cycle
+        rgbw_pins["3W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
+
+    if 4 == ctrlNum:
+        # Convert 0–255 to 0–65535 duty cycle
+        rgbw_pins["4W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
+
+
+
+#------------------------------------------------
+#--- set_rgb
+#--- This function sets the RGB values for a single
+#--- Controller.  It takes in the contoller number, 
+#--- and the 3 RGB values in the range of 0 to 255
+#--- and the brightness value of 0 to 3.  
+#--- It then converts them to the duty cycle for the 
+#--- LED channels and set the values into the LED.
+#--- This is used by the JSON parsing routine but is
+#--- primarily used by the set brightness to change
+#--- an LEDs brightness given saved values.
+#--- rb, gb, bb, and wb are the brightness indexes.
+#------------------------------------------------
+def set_rgb(ctrlNum, r, g, b, rb, gb, bb):
+
+    #--- Brightness ratios
+    mulr = LED_Dimmer_multiply_Array[rb]
+    divr = LED_Dimmer_divide_Array[rb]
+    mulg = LED_Dimmer_multiply_Array[gb]
+    divg = LED_Dimmer_divide_Array[gb]
+    mulb = LED_Dimmer_multiply_Array[bb]
+    divb = LED_Dimmer_divide_Array[bb]
+        
+    if 1 == ctrlNum:
+        # Convert 0–255 to 0–65535 duty cycle
+        rgbw_pins["1R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
+        rgbw_pins["1G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
+        rgbw_pins["1B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
+
+
+    if 2 == ctrlNum:
+        # Convert 0–255 to 0–65535 duty cycle
+        rgbw_pins["2R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
+        rgbw_pins["2G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
+        rgbw_pins["2B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
+
+    if 3 == ctrlNum:
+        # Convert 0–255 to 0–65535 duty cycle
+        rgbw_pins["3R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
+        rgbw_pins["3G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
+        rgbw_pins["3B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
+
+    if 4 == ctrlNum:
+        # Convert 0–255 to 0–65535 duty cycle
+        rgbw_pins["4R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
+        rgbw_pins["4G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
+        rgbw_pins["4B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
+
+
 
 #------------------------------------------------
 #--- set_rgbw
 #--- This function sets the RGBW values for a single
 #--- Controller.  It takes in the contoller number, 
 #--- and the 4 RGBW values in the range of 0 to 255
-#--- and the brightness value of 0 to 4.  
+#--- and the brightness value of 0 to 3.  
 #--- It then converts them to the duty cycle for the 
 #--- LED channels and set the values into the LED.
 #--- This is used by the JSON parsing routine but is
 #--- primarily used by the set brightness to change
 #--- an LEDs brightness given saved values.
+#--- rb, gb, bb, and wb are the brightness indexes.
 #------------------------------------------------
 def set_rgbw(ctrlNum, r, g, b, w, rb, gb, bb, wb):
 
@@ -137,13 +277,14 @@ def set_rgbw(ctrlNum, r, g, b, w, rb, gb, bb, wb):
         rgbw_pins["2B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
         rgbw_pins["2W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
 
-    elif 3 == ctrlNum:
+    if 3 == ctrlNum:
         # Convert 0–255 to 0–65535 duty cycle
         rgbw_pins["3R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
         rgbw_pins["3G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
         rgbw_pins["3B"].duty_u16(int(b / 255 * 65535 * mulb / divb))
         rgbw_pins["3W"].duty_u16(int(w / 255 * 65535 * mulw / divw))
-    else:
+
+    if 4 == ctrlNum:
         # Convert 0–255 to 0–65535 duty cycle
         rgbw_pins["4R"].duty_u16(int(r / 255 * 65535 * mulr / divr))
         rgbw_pins["4G"].duty_u16(int(g / 255 * 65535 * mulg / divg))
@@ -153,18 +294,94 @@ def set_rgbw(ctrlNum, r, g, b, w, rb, gb, bb, wb):
 
 
 #------------------------------------------------
+#--- set_4Chan_json
+#--- Take in a data dictionary that was built from a
+#--- json string that has the controller number and 
+#--- one index. The index will be for one of the
+#--- 4 channel. Set the brightness of the LED.
+#--- This expects only one controller message to be 
+#--- in the JSON string with only one channel being set.
+#------------------------------------------------
+def set_4Chan_json(jsonData):
+
+    #--- Pull out the controller number (first key),
+    #--- the channel (first key of inner dictionary),
+    #--- and the index value (value of channel key).
+    #--- Save the index in the rgbw array and then
+    #--- set the LED.
+    ctrlNum = next(iter(jsonData))
+    chanDict = jsonData[ctrlNum]
+    chanKey = next(iter(chanDict))
+    chanValue = chanDict[chanKey]
+    saved_rgbw_values[ctrlNum + chanKey] = chanValue
+    chanBright = rgbw_brightness[ctrlNum + chanKey]
+
+    #--- Brightness ratios
+    mulVal = LED_Dimmer_multiply_Array[chanValue]
+    divVal = LED_Dimmer_divide_Array[chanValue]
+        
+    # Convert 0–255 to 0–65535 duty cycle and set the actual LED.
+    rgbw_pins[ctrlNum + chanKey].duty_u16(int(chanValue / 255 * 65535 * mulVal / mulVal))
+
+
+#------------------------------------------------
+#--- set_rgb_plus_one_json
+#--- Take in a data dictionary that was built from
+#--- a JSON string which contains the contoller 
+#--- number, and either the 3 RGB values or the single
+#--- W value, in the range of 0 to 255.  Save them and 
+#--- then call the set LED routine using existing 
+#--- brightness. This expects only one controller 
+#--- message to be in the JSON string.
+#------------------------------------------------
+def set_rgb_plus_one_json(jsonData):
+
+    #--- First get the controller number
+    ctrlNum = next(iter(jsonData))
+    #--- Next get the values dictionary
+    chanDict = jsonData[ctrlNum]
+
+    #--- It's either setting the RGB channels or the W 
+    #--- channel, not both.
+    if 'W' in chanDict:
+        saved_rgbw_values[ctrlNum + "W"] = int(chanDict["W"])
+        #--- Write to the actual LED
+        set_w(int(ctrlNum), 
+              saved_rgbw_values[ctrlNum + "W"],
+              rgbw_brightness[ctrlNum + "W"]) 
+    else:
+        #--- Get the 3 RGB values
+        saved_rgbw_values[ctrlNum + "R"] = int(chanDict["R"])
+        saved_rgbw_values[ctrlNum + "G"] = int(chanDict["G"])
+        saved_rgbw_values[ctrlNum + "B"] = int(chanDict["B"])
+
+        set_rgb(int(ctrlNum),
+                saved_rgbw_values[ctrlNum + "R"],
+                saved_rgbw_values[ctrlNum + "G"],
+                saved_rgbw_values[ctrlNum + "B"],
+                rgbw_brightness[ctrlNum + "R"],
+                rgbw_brightness[ctrlNum + "G"],
+                rgbw_brightness[ctrlNum + "B"]
+                )
+
+
+#------------------------------------------------
 #--- set_rgbw_json
-#--- Take in a  JSON string which contains the 
-#--- contoller number, and the 4 RGBW values in 
-#--- the range of 0 to 255.  Save them and then
-#--- call the set routine using existing brightness.
+#--- Take in a data dictionary that was built from
+#--- a JSON string which contains the contoller 
+#--- number, and the 4 RGBW values in the range of 
+#--- 0 to 255.  Save them and then call the set LED
+#--- routine using existing brightness. This expects
+#--- only one controller message to be in the JSON string.
 #------------------------------------------------
 def set_rgbw_json(ledData):
-    if 1 in ledData:
-        saved_rgbw_values["1R"] = ledData[1]["R"]
-        saved_rgbw_values["1G"] = ledData[1]["G"]
-        saved_rgbw_values["1B"] = ledData[1]["B"]
-        saved_rgbw_values["1W"] = ledData[1]["W"]
+
+    if "1" in ledData:
+        saved_rgbw_values["1R"] = int(ledData["1"]["R"])
+        saved_rgbw_values["1G"] = int(ledData["1"]["G"])
+        saved_rgbw_values["1B"] = int(ledData["1"]["B"])
+        saved_rgbw_values["1W"] = int(ledData["1"]["W"])
+        print("RGBW 1:", saved_rgbw_values["1R"], saved_rgbw_values["1G"], saved_rgbw_values["1B"], saved_rgbw_values["1W"])
 
         set_rgbw(1,
                  saved_rgbw_values["1R"],
@@ -177,11 +394,11 @@ def set_rgbw_json(ledData):
                  rgbw_brightness["1W"]
                 )
 
-    elif 2 in ledData:
-        saved_rgbw_values["2R"] = ledData[2]["R"]
-        saved_rgbw_values["2G"] = ledData[2]["G"]
-        saved_rgbw_values["2B"] = ledData[2]["B"]
-        saved_rgbw_values["2W"] = ledData[2]["W"]
+    if "2" in ledData:
+        saved_rgbw_values["2R"] = int(ledData["2"]["R"])
+        saved_rgbw_values["2G"] = int(ledData["2"]["G"])
+        saved_rgbw_values["2B"] = int(ledData["2"]["B"])
+        saved_rgbw_values["2W"] = int(ledData["2"]["W"])
 
         set_rgbw(2,
                  saved_rgbw_values["2R"],
@@ -194,11 +411,11 @@ def set_rgbw_json(ledData):
                  rgbw_brightness["2W"]
                 )
 
-    elif 3 in ledData:
-        saved_rgbw_values["3R"] = ledData[3]["R"]
-        saved_rgbw_values["3G"] = ledData[3]["G"]
-        saved_rgbw_values["3B"] = ledData[3]["B"]
-        saved_rgbw_values["3W"] = ledData[3]["W"]
+    if "3" in ledData:
+        saved_rgbw_values["3R"] = int(ledData["3"]["R"])
+        saved_rgbw_values["3G"] = int(ledData["3"]["G"])
+        saved_rgbw_values["3B"] = int(ledData["3"]["B"])
+        saved_rgbw_values["3W"] = int(ledData["3"]["W"])
 
         set_rgbw(3,
                  saved_rgbw_values["3R"],
@@ -211,11 +428,11 @@ def set_rgbw_json(ledData):
                  rgbw_brightness["3W"]
                 )
 
-    else:
-        saved_rgbw_values["4R"] = ledData[4]["R"]
-        saved_rgbw_values["4G"] = ledData[4]["G"]
-        saved_rgbw_values["4B"] = ledData[4]["B"]
-        saved_rgbw_values["4W"] = ledData[4]["W"]
+    if "4" in ledData:
+        saved_rgbw_values["4R"] = int(ledData["4"]["R"])
+        saved_rgbw_values["4G"] = int(ledData["4"]["G"])
+        saved_rgbw_values["4B"] = int(ledData["4"]["B"])
+        saved_rgbw_values["4W"] = int(ledData["4"]["W"])
 
         set_rgbw(4,
                  saved_rgbw_values["4R"],
@@ -231,18 +448,88 @@ def set_rgbw_json(ledData):
 
 
 #------------------------------------------------
-#--- set_brightness
-#--- Take in a json string that has 4 indexes that 
-#--- correspond to the 4 channels on a given controller, 
-#--- and set the value into the array of brightnesses.  
-#--- Then set the LED with the new brightness.
+#--- set_brightness_4Chan
+#--- Take in a data dictionary that was built from a
+#--- json string that has the controller number and 
+#--- one index. The index will be either for one of 
+#--- the 4 channel. Set the brightness of the 
+#--- appropriate LED.
+#--- This expects only one controller message to be 
+#--- in the JSON string with only one channel being set.
 #------------------------------------------------
-def set_brightness(jsonData):
-    if 1 in jsonData:
-        rgbw_brightness["1R"] = jsonData[1]["chan1Index"]
-        rgbw_brightness["1G"] = jsonData[1]["chan2Index"]
-        rgbw_brightness["1B"] = jsonData[1]["chan3Index"]
-        rgbw_brightness["1W"] = jsonData[1]["chan4Index"]
+def set_brightness_4Chan(jsonData):
+
+    #--- Pull out the controller number (first key),
+    #--- the channel (first key of inner dictionary),
+    #--- and the index value (value of channel key).
+    #--- Save the index in the brightness array and
+    #--- then get the saved RGB value for convenience.
+    ctrlNum = next(iter(jsonData))
+    chanDict = jsonData[ctrlNum]
+    chanKey = next(iter(chanDict))
+    chanValue = chanDict[chanKey]
+    rgbw_brightness[ctrlNum + chanKey] = chanValue
+    rgbw_value = saved_rgbw_values[ctrlNum + chanKey]
+
+    #--- Brightness ratios
+    mulw = LED_Dimmer_multiply_Array[chanValue]
+    divw = LED_Dimmer_divide_Array[chanValue]
+        
+    # Convert 0–255 to 0–65535 duty cycle and set the actual LED.
+    rgbw_pins[ctrlNum + chanKey].duty_u16(int(rgbw_value / 255 * 65535 * mulw / divw))
+
+
+#------------------------------------------------
+#--- set_brightness_rgb_plus_one
+#--- Take in a data dictionary that was built from a
+#--- json string that has the controller number and 
+#--- one index. The index will be either for the RGB
+#--- channel or the +1 (w) channel. Set the brightness
+#--- of the appropriate LED.
+#--- This expects only one controller message to be 
+#--- in the JSON string and either 3 channels or the
+#--- single W channel.
+#------------------------------------------------
+def set_brightness_rgb_plus_one(jsonData):
+
+    ctrlNum = next(iter(jsonData))
+
+    if "W" in jsonData[ctrlNum]:
+        #--- First check for +1 channel.
+        rgbw_brightness[ctrlNum + "W"] = int(jsonData[ctrlNum]["W"])
+        #--- Write to the actual LED
+        set_w(int(ctrlNum), 
+              saved_rgbw_values[ctrlNum + "W"],
+              rgbw_brightness[ctrlNum + "W"]) 
+    else:
+        #--- Else, is the RGB channel
+        set_rgb(int(ctrlNum),
+                saved_rgbw_values[ctrlNum + "R"],
+                saved_rgbw_values[ctrlNum + "G"],
+                saved_rgbw_values[ctrlNum + "B"],
+                rgbw_brightness[ctrlNum + "R"],
+                rgbw_brightness[ctrlNum + "G"],
+                rgbw_brightness[ctrlNum + "B"]
+                )
+
+
+#------------------------------------------------
+#--- set_brightness_rgbw
+#--- Take in a data dictionary that was built from a
+#--- json string that has the controller number and 
+#--- 4 indexes that correspond to the 4 channels on 
+#--- a given controller. Save the value into the 
+#--- array of brightnesses, then set the LED with 
+#--- the new brightness.
+#--- This expects only one controller message to be 
+#--- in the JSON string and all four channels in it.
+#------------------------------------------------
+def set_brightness_rgbw(jsonData):
+    if "1" in jsonData:
+        rgbw_brightness["1R"] = int(jsonData["1"]["R"])
+        rgbw_brightness["1G"] = int(jsonData["1"]["G"])
+        rgbw_brightness["1B"] = int(jsonData["1"]["B"])
+        rgbw_brightness["1W"] = int(jsonData["1"]["W"])
 
         set_rgbw(1,
                  saved_rgbw_values["1R"],
@@ -255,11 +542,11 @@ def set_brightness(jsonData):
                  rgbw_brightness["1W"]
                 )
 
-    if 2 in jsonData:
-        rgbw_brightness["2R"] = jsonData[2]["chan1Index"]
-        rgbw_brightness["2G"] = jsonData[2]["chan2Index"]
-        rgbw_brightness["2B"] = jsonData[2]["chan3Index"]
-        rgbw_brightness["2W"] = jsonData[2]["chan4Index"]
+    if "2" in jsonData:
+        rgbw_brightness["2R"] = int(jsonData["2"]["R"])
+        rgbw_brightness["2G"] = int(jsonData["2"]["G"])
+        rgbw_brightness["2B"] = int(jsonData["2"]["B"])
+        rgbw_brightness["2W"] = int(jsonData["2"]["W"])
 
         set_rgbw(2,
                  saved_rgbw_values["2R"],
@@ -272,11 +559,11 @@ def set_brightness(jsonData):
                  rgbw_brightness["2W"]
                 )
 
-    if 3 in jsonData:
-        rgbw_brightness["3R"] = jsonData[3]["chan1Index"]
-        rgbw_brightness["3G"] = jsonData[3]["chan2Index"]
-        rgbw_brightness["3B"] = jsonData[3]["chan3Index"]
-        rgbw_brightness["3W"] = jsonData[3]["chan4Index"]
+    if "3" in jsonData:
+        rgbw_brightness["3R"] = int(jsonData["3"]["R"])
+        rgbw_brightness["3G"] = int(jsonData["3"]["G"])
+        rgbw_brightness["3B"] = int(jsonData["3"]["B"])
+        rgbw_brightness["3W"] = int(jsonData["3"]["W"])
 
         set_rgbw(3,
                  saved_rgbw_values["3R"],
@@ -289,11 +576,11 @@ def set_brightness(jsonData):
                  rgbw_brightness["3W"]
                 )
 
-    else:
-        rgbw_brightness["4R"] = jsonData[4]["chan1Index"]
-        rgbw_brightness["4G"] = jsonData[4]["chan2Index"]
-        rgbw_brightness["4B"] = jsonData[4]["chan3Index"]
-        rgbw_brightness["4W"] = jsonData[4]["chan4Index"]
+    if "4" in jsonData:
+        rgbw_brightness["4R"] = int(jsonData["4"]["R"])
+        rgbw_brightness["4G"] = int(jsonData["4"]["G"])
+        rgbw_brightness["4B"] = int(jsonData["4"]["B"])
+        rgbw_brightness["4W"] = int(jsonData["4"]["W"])
 
         set_rgbw(4,
                  saved_rgbw_values["4R"],
@@ -305,115 +592,6 @@ def set_brightness(jsonData):
                  rgbw_brightness["4B"],
                  rgbw_brightness["4W"]
                 )
-
-
-
-#------------------------------------------------
-#--- fade_rgbw_to
-#--- Get the current RGBW values for the LED and
-#--- then fade all channels using the number of 
-#--- steps, pausing for duration at each step.
-#------------------------------------------------
-def fade_rgbw_to(r_target, g_target, b_target, w_target, duration=1000, steps=50):
-    r_current = rgbw_pins["R"].duty_u16() // 257
-    g_current = rgbw_pins["G"].duty_u16() // 257
-    b_current = rgbw_pins["B"].duty_u16() // 257
-    w_current = rgbw_pins["W"].duty_u16() // 257
-
-    for i in range(1, steps + 1):
-        r = r_current + (r_target - r_current) * i // steps
-        g = g_current + (g_target - g_current) * i // steps
-        b = b_current + (b_target - b_current) * i // steps
-        w = w_current + (w_target - w_current) * i // steps
-#        set_rgbw("Ctrl1", r, g, b, w)
-        sleep(duration / steps / 1000)
-
-
-#--- NeoPixel Setup ----
-MATRIX_WIDTH = 32
-MATRIX_HEIGHT = 16
-NUM_PIXELS = MATRIX_WIDTH * MATRIX_HEIGHT
-np = neopixel.NeoPixel(Pin(28), NUM_PIXELS)
-
-
-#--------------------------------------------------
-#--- get_index
-#--- Helper to get linear index for serpentine wiring
-#--------------------------------------------------
-def get_index(x, y):
-    if y % 2 == 0:
-        return y * MATRIX_WIDTH + x
-    else:
-        return y * MATRIX_WIDTH + (MATRIX_WIDTH - 1 - x)
-
-
-#---------------------------------------------------
-#--- fill_matrix_color
-#--- This function loops over the entire LED matrix
-#--- setting the specified color in each pixel.
-#--- This is primarily used to turn off all LEDs.
-#---------------------------------------------------
-def fill_matrix_color(r, g, b):
-    for y in range(MATRIX_HEIGHT):
-        for x in range(MATRIX_WIDTH):
-            index = get_index(x, y)
-            np[index] = (r, g, b)
-    np.write()
-
-
-#---------------------------------------------------
-#--- fade_matrix_to
-#--- This function fades the LED matrix to the target
-#--- RGBW value over the specified number of steps,
-#--- pausing for duration at each step.
-#---------------------------------------------------
-def fade_matrix_to(r_target, g_target, b_target, duration=1000, steps=50):
-    r0, g0, b0 = np[0]  # assuming the matrix is uniform
-    for i in range(1, steps + 1):
-        r = r0 + (r_target - r0) * i // steps
-        g = g0 + (g_target - g0) * i // steps
-        b = b0 + (b_target - b0) * i // steps
-        fill_matrix_color(r, g, b)
-        sleep(duration / steps / 1000)
-
-#---------------------------------------------------------------
-#--- matrix_snake
-#--- A function to make a centipede move across the matrix.
-#---------------------------------------------------------------
-def matrix_snake(r, g, b):
-    for i in range(5, NUM_PIXELS):
-        np[i] = (255, 0, 0)
-        np[i-1] = (0, 255, 0)
-        np[i-2] = (0, 255, 0)
-        np[i-3] = (0, 255, 0)
-        np[i-4] = (0, 255, 0)
-
-        if i-5 >= 1:
-            np[i-5] = (0,  0, 0)
-        np.write()
-        sleep (0.1)
-
-
-#----------------------------------------------------------------
-#--- save_config
-#--- Take the passed in json string and writes it to a file
-#---
-#----------------------------------------------------------------
-def save_config(data):
-
-    config_file_path = "config.json"
-
-    filePath = config_file_path
-    try:
-        with open(filePath, "w") as file:
-            ujson.dump(data, file)
-
-    except OSError:
-        #--- Failed to open file for write
-        print("Failed to open config file for write")
-    finally:
-        if 'file' in locals():
-            file.close()
 
 
 #----------------------------------------------------------------
@@ -484,147 +662,34 @@ def save_scene_config(sceneID, SceneName, filePath):
 #----------------------------------------------------------------
 #--- save_scene
 #--- Take the passed in json string, parses out the scene name
-#--- and and scene ID and writes the name and all LED values and
+#--- and scene ID and writes the name and all LED values and
 #--- LED brightness out to a file.
 #---
 #----------------------------------------------------------------
 def save_scene(data):
-    if "Scene1Cfg" in data:
+    print("In save scene. Got data: ", data)
+    if "1" in data:
         print("Found save scene 1")
         config_file_path = "Scene1.json"
-        aName = data["Scene1Cfg"]
-        save_scene_config("Scene1", aName, config_file_path)
+        aName = data["1"]
+        save_scene_config("1", aName, config_file_path)
 
-    if "Scene2Cfg" in data:
+    if "2" in data:
         config_file_path = "Scene2.json"
-        aName = data["Scene2Cfg"]
-        save_scene_config("Scene2", aName, config_file_path)
+        aName = data["2"]
+        save_scene_config("2", aName, config_file_path)
 
-    if "Scene3Cfg" in data:
+    if "3" in data:
         config_file_path = "Scene3.json"
-        aName = data["Scene3Cfg"]
-        save_scene_config("Scene3", aName, config_file_path)
+        aName = data["3"]
+        save_scene_config("3", aName, config_file_path)
 
-    if "Scene4Cfg" in data:
+    if "4" in data:
         config_file_path = "Scene4.json"
-        aName = data["Scene4Cfg"]
-        save_scene_config("Scene4", aName, config_file_path)
+        aName = data["4"]
+        save_scene_config("4", aName, config_file_path)
 
 
-
-
-
-#----------------------------------------------------------------
-#--- default_config_data
-#--- Build a structure of config data with default names.
-#---
-#----------------------------------------------------------------
-def default_config_data():
-
-    cfgData = {}
-    ctrlData = {}
-    ctrlDef = {}
-    chanNames = {}
-    chanNames["Chan1Name"] = "Chan1"
-    chanNames["Chan2Name"] = "Chan2"
-    chanNames["Chan3Name"] = "Chan3"
-    chanNames["Chan4Name"] = "Chan5"
-
-    ctrlDef["Name"] = "Ctrl1"
-    ctrlDef["Type"] = "RGBW"
-    ctrlDef["ChanNames"] = chanNames
-    ctrlData[1] = ctrlDef
-
-    ctrlDef["Name"] = "Ctrl2"
-    ctrlDef["Type"] = "RGBW"
-    ctrlDef["ChanNames"] = chanNames
-    ctrlData[2] = ctrlDef
-
-    ctrlDef["Name"] = "Ctrl3"
-    ctrlDef["Type"] = "RGBW"
-    ctrlDef["ChanNames"] = chanNames
-    ctrlData[3] = ctrlDef
-
-    ctrlDef["Name"] = "Ctrl4"
-    ctrlDef["Type"] = "RGBW"
-    ctrlDef["ChanNames"] = chanNames
-    ctrlData[4] = ctrlDef
-
-    cfgData["ConfigData"] = ctrlData
-
-    return cfgData
-
-
-#----------------------------------------------------------------
-#--- test_SaveConfig
-#--- Build a structure of config data with default names to 
-#--- emulate the message coming from the phone app.
-#---
-#----------------------------------------------------------------
-def test_SaveConfig():
-
-    cfgData = {}
-    ctrlData = {}
-    ctrlDef = {}
-    chanNames = {}
-    chanNames["Chan1Name"] = "myChan1"
-    chanNames["Chan2Name"] = "myChan2"
-    chanNames["Chan3Name"] = "myChan3"
-    chanNames["Chan4Name"] = "myChan5"
-
-    ctrlDef["Name"] = "myCtrl1"
-    ctrlDef["Type"] = "RGBW"
-    ctrlDef["ChanNames"] = chanNames
-    ctrlData[1] = ctrlDef
-
-    ctrlDef["Name"] = "myCtrl2"
-    ctrlDef["Type"] = "RGB+1"
-    ctrlDef["ChanNames"] = chanNames
-    ctrlData[2] = ctrlDef
-
-    ctrlDef["Name"] = "myCtrl3"
-    ctrlDef["Type"] = "4Channel"
-    ctrlDef["ChanNames"] = chanNames
-    ctrlData[3] = ctrlDef
-
-    ctrlDef["Name"] = "myCtrl4"
-    ctrlDef["Type"] = "4Channel"
-    ctrlDef["ChanNames"] = chanNames
-    ctrlData[4] = ctrlDef
-
-    cfgData["SaveConfig"] = ctrlData
-
-    return cfgData
-
-
-#----------------------------------------------------------------
-#--- read_config
-#--- Read the names and config settings from the config file and
-#--- load into a json string that will get sent to the phone app.
-#---
-#----------------------------------------------------------------
-def read_config():
-
-    config_file_path = "config.json"
-
-    cfgData = {}
-
-    filePath = config_file_path
-    try:
-        with open(filePath, "r") as file:
-            cfgData = ujson.load(file)
-
-    except OSError:
-        #--- Failed to open file for read so no
-        #--- config data has been saved. Create
-        #--- default data to return.
-#        print("Failed to open config file for write")
-        cfgData = default_config_data()
-    finally:
-        if 'file' in locals():
-            file.close()
-
-    return cfgData
 
 
 #----------------------------------------------------------------
@@ -653,7 +718,7 @@ def set_a_scene(data):
     rgbw_brightness["4B"] = dims["4B"]
     rgbw_brightness["4W"] = dims["4W"]
 
-    ledValues = data["ledValues"]
+    ledValues = data["leds"]
     #--- Save for later brightness adjustment
     saved_rgbw_values["1R"] = ledValues["1R"]
     saved_rgbw_values["1G"] = ledValues["1G"]
@@ -728,17 +793,21 @@ def set_a_scene(data):
 def load_scene(sceneNum):
 
     if sceneNum == 1:
-        print("Found save scene 1")
+        print("Found load scene 1")
         config_file_path = "Scene1.json"
+        sceneKey = "1"
 
     if sceneNum == 2:
         config_file_path = "Scene2.json"
+        sceneKey = "2"
 
     if sceneNum == 3:
         config_file_path = "Scene3.json"
+        sceneKey = "3"
 
     if sceneNum == 4:
         config_file_path = "Scene4.json"
+        sceneKey = "4"
 
 
     sceneData = {}
@@ -747,7 +816,7 @@ def load_scene(sceneNum):
     try:
         with open(filePath, "r") as file:
             sceneData = ujson.load(file)
-            set_a_scene(sceneData)
+            set_a_scene(sceneData[sceneKey])
 
     except OSError:
         #--- Failed to open file for read so no
@@ -782,154 +851,174 @@ def all_off():
     saved_rgbw_values["4G"] = 0
     saved_rgbw_values["4B"] = 0
     saved_rgbw_values["4W"] = 0
-    rgbw_brightness["1R"] = 4
-    rgbw_brightness["1G"] = 4
-    rgbw_brightness["1B"] = 4
-    rgbw_brightness["1W"] = 4
-    rgbw_brightness["2R"] = 4
-    rgbw_brightness["2G"] = 4
-    rgbw_brightness["2B"] = 4
-    rgbw_brightness["2W"] = 4
-    rgbw_brightness["3R"] = 4
-    rgbw_brightness["3G"] = 4
-    rgbw_brightness["3B"] = 4
-    rgbw_brightness["3W"] = 4
-    rgbw_brightness["4R"] = 4
-    rgbw_brightness["4G"] = 4
-    rgbw_brightness["4B"] = 4
-    rgbw_brightness["4W"] = 4
-    set_rgbw(1, 0, 0, 0, 0, 4, 4, 4, 4)
-    set_rgbw(2, 0, 0, 0, 0, 4, 4, 4, 4)
-    set_rgbw(3, 0, 0, 0, 0, 4, 4, 4, 4)
-    set_rgbw(4, 0, 0, 0, 0, 4, 4, 4, 4)
+    rgbw_brightness["1R"] = 3
+    rgbw_brightness["1G"] = 3
+    rgbw_brightness["1B"] = 3
+    rgbw_brightness["1W"] = 3
+    rgbw_brightness["2R"] = 3
+    rgbw_brightness["2G"] = 3
+    rgbw_brightness["2B"] = 3
+    rgbw_brightness["2W"] = 3
+    rgbw_brightness["3R"] = 3
+    rgbw_brightness["3G"] = 3
+    rgbw_brightness["3B"] = 3
+    rgbw_brightness["3W"] = 3
+    rgbw_brightness["4R"] = 3
+    rgbw_brightness["4G"] = 3
+    rgbw_brightness["4B"] = 3
+    rgbw_brightness["4W"] = 3
+    set_rgbw(1, 0, 0, 0, 0, 3, 3, 3, 3)
+    set_rgbw(2, 0, 0, 0, 0, 3, 3, 3, 3)
+    set_rgbw(3, 0, 0, 0, 0, 3, 3, 3, 3)
+    set_rgbw(4, 0, 0, 0, 0, 3, 3, 3, 3)
 
 
 
 #----------------------------------------------------------------
-#--- test_SetLED
-#--- This function build a json string that emulates what will 
-#--- come from the phone app.
+#--- on_sceneSelect_rx
+#--- Define a callback function to handle a received command
+#--- to select a predefined scene.
 #---
 #----------------------------------------------------------------
-def test_SetLED():
+def on_sceneSelect_rx(data):
+    print("sceneSelect Data received: ", data)  # Print the received data
+
+    #--- The only data is the scene number.
     localDict = {}
-    ledValues = {}
+    dataStr = data.decode('utf-8')
+    localDict = ujson.loads(dataStr)
+ 
+    if "LEDScene" in localDict:
+        load_scene(localDict["LEDScene"])
 
-    ledValues["R"] = 75
-    ledValues["G"] = 75
-    ledValues["B"] = 75
-    ledValues["W"] = 75
-
-    localDict[1] = ledValues
-
-    return localDict
 
 
 #----------------------------------------------------------------
-#--- test_Brightness
-#--- This function build a json string that emulates what will 
-#--- come from the phone app.
+#--- on_sceneSave_rx
+#--- Define a callback function to handle a received command
+#--- to save the current state of LEDs to a file.
 #---
 #----------------------------------------------------------------
-def test_Brightness():
+def on_sceneSave_rx(data):
+    print("sceneSave Data received: ", data)  # Print the received data
+
+    #--- Get the scene data which is a scene number and a name.
     localDict = {}
-    ledValues = {}
+    dataStr = data.decode('utf-8')
+    localDict = ujson.loads(dataStr)
+ 
+    if "SaveScene" in localDict:
+        sceneConfigData = localDict["SaveScene"]
+        save_scene(sceneConfigData)
 
-    ledValues["chan1Index"] = 4
-    ledValues["chan2Index"] = 3
-    ledValues["chan3Index"] = 2
-    ledValues["chan4Index"] = 1
-
-    localDict[1] = ledValues
-
-    return localDict
 
 
 #----------------------------------------------------------------
-#--- test_save_scene
-#--- This function build a json string that emulates what will 
-#--- come from the phone app.
-#---
+#--- on_setBright_rx
+#--- Define a callback function to handle a received command
+#--- to set the brightness of the LEDs.
+#--- The first key in the json string is the controller number.
+#--- Get the controller type and call the appropriate
+#--- brightness setting function.
+#--- duty_u16 is ratio of duty_cycle / 65535
+#--- So we have to convert 0 to 255 into 0 to 65535
 #----------------------------------------------------------------
-def test_SaveScene():
+def on_setBright_rx(data):
+    print("setBright Data received: ", data)  # Print the received data
+
+    #--- There should only be a message for a single controller
     localDict = {}
-    ledValues = {}
+    dataStr = data.decode('utf-8')
+    localDict = ujson.loads(dataStr)
+    ctrlNum = next(iter(localDict))
+    print("First key: ", ctrlNum)
 
-    ledValues["chan1Index"] = 4
-    ledValues["chan2Index"] = 3
-    ledValues["chan3Index"] = 2
-    ledValues["chan4Index"] = 1
+    localCtrType = cfgObj.get_ctrl_type(ctrlNum)
 
-    localDict[1] = ledValues
+    if 'RGBW' == localCtrType:
+        set_brightness_rgbw(localDict)
+    elif 'RGB+1' == localCtrType:
+        set_brightness_rgb_plus_one(localDict)
+    else:  # '4Chan' == localCtrType:
+        set_brightness_4Chan(localDict)
 
-    return localDict
+
 
 
 #----------------------------------------------------------------
-#--- on_rx
-#--- Define a callback function to handle received data
+#--- on_allOff_rx
+#--- Define a callback function to handle a received command
+#--- to turn all LEDs off.
 #---
 #--- duty_u16 is ratio of duty_cycle / 65535
 #--- So we have to convert 0 to 255 into 0 to 65535
 #----------------------------------------------------------------
-def on_rx(data):
-    print("Data received: ", data)  # Print the received data
+def on_allOff_rx(data):
+    print("allOff Data received: ", data)  # Print the received data
 
+    #--- It doesn't matter what the message is, we are just
+    #--- turning everything off.
     localDict = {}
-
-    localDict = ujson.loads(data)
-    print("First object: ", localDict)
-
-#    dataStr = data.decode('utf-8')
-
-#    aSecObj = ujson.loads(dataStr)
-#    print("Second object: ", aSecObj)
-
-    if "LEDScene" in localDict:
-        load_scene(localDict["LEDScene"])
-    elif "SetLED" in localDict:
-#        localJson = localDict["SetLED"]
-        localJson = test_SetLED()
-        set_rgbw_json(localJson)
-    elif "SendConfig" in localDict:
-        pass
-    elif "SetBrightness" in localDict:
-#        localJson = localDict["SetBrightness"]
-        localJson = test_Brightness()
-        set_brightness(localJson)
-    elif "SaveScene" in localDict:
-#        sceneConfigData = localDict["SaveScene"]
-        sceneConfigData = test_SaveScene()
-        save_scene(sceneConfigData)
-    elif "SaveConfig" in localDict:
-        configData = localDict["SaveConfig"]
-        configData = test_SaveConfig()
-        save_config(configData)
-
-    else:
-        # AllOff
-        all_off()
-
-    # sceneConfig = {}
-    # sceneConfig["Scene1Cfg"] = "NewScene"
-
-    # if localDict['LEDScene'] == 1:
-    #     set_rgbw("Ctrl1", 255, 0, 0, 0)
-    #     curDuty = rgbw_pins["1R"].duty_u16()
-    #     print("Current duty: ", curDuty)
-    #     set_rgbw("Ctrl2", 0, 255, 0, 0)
-    #     set_rgbw("Ctrl3", 0, 0, 255, 0)
-    # elif localDict['LEDScene'] == 2:
-    #     load_scene("Scene1Cfg")
-    # else:
-    #     all_off()
+    dataStr = data.decode('utf-8')
+    localDict = ujson.loads(dataStr)
+    all_off()
 
 
-       
-    global led_state  # Access the global variable led_state
-#    if data == b'toggle\r\n':  # Check if the received data is "toggle"
-#        led.value(not led_state)  # Toggle the LED state (on/off)
-#        led_state = 1 - led_state  # Update the LED state
+
+#----------------------------------------------------------------
+#--- on_setLED_rx
+#--- Define a callback function to handle received data to set an LED.
+#--- The first key in the json string is the controller number.
+#--- Get the controller type and call the appropriate
+#--- LED setting function.
+#--- 
+#---
+#--- duty_u16 is ratio of duty_cycle / 65535
+#--- So we have to convert 0 to 255 into 0 to 65535
+#----------------------------------------------------------------
+def on_setLED_rx(data):
+    print("setLED Data received: ", data)  # Print the received data
+
+    #--- There should only be a message for a single controller
+    localDict = {}
+    dataStr = data.decode('utf-8')
+    localDict = ujson.loads(dataStr)
+    ctrlNum = next(iter(localDict))
+    print("Controller: ", ctrlNum)
+
+    localCtrType = cfgObj.get_ctrl_type(ctrlNum)
+
+    if 'RGBW' == localCtrType:
+        set_rgbw_json(localDict)
+    elif 'RGB+1' == localCtrType:
+        set_rgb_plus_one_json(localDict)
+    else:  # '4Chan' == localCtrType:
+        set_4Chan_json(localDict)
+
+    return
+
+
+#----------------------------------------------------------------
+#--- on_setCtrlType_rx
+#--- Define a callback function to handle the json message to set
+#--- the controller type, name, and channel names.
+#--- The first key in the json string is the controller number.
+#--- Get the controller type and call the appropriate
+#--- LED setting function.
+#--- 
+#----------------------------------------------------------------
+def on_setCtrlType_rx(data):
+    print("setCtrlType Data received: ", data)  # Print the received data
+
+    #--- There should only be a message for a single controller
+    localDict = {}
+    dataStr = data.decode('utf-8')
+    localDict = ujson.loads(dataStr)
+    ctrlNum = next(iter(localDict))
+    cfgObj.set_ctrl_type(ctrlNum, localDict[ctrlNum]['Type'])
+    cfgObj.set_ctrl_name(ctrlNum, localDict[ctrlNum]['Name'])
+    chanNames = localDict[ctrlNum]['ChanNames']
+    set_channel_names(ctrlNum, chanNames)
 
 
 #----------------------------------------------------------
@@ -940,13 +1029,36 @@ def main():
     try:
         print("Setting up")
 
-        cfgData = default_config_data()
-        save_config(cfgData)
+        unique_id_bytes = unique_id()
+
+        unique_id_hex = ""
+
+        for b in unique_id_bytes:
+            unique_id_hex += "{:02X}".format(b) + ":"
+
+    #--- This pico's UUID
+        print("Pico Unique ID: ", unique_id_hex)
+
+        #--- Read the config data from the file if it exists.
+        #--- If it doesn't, get the default data. Then write the config
+        #--- string to the read characteristic so the app can get it.
+        cfgStr = cfgObj.to_json()
+#        cfgStr = ujson.dumps(cfgDict)
+        cfgBytes = cfgStr.encode('utf-8')
+        ledPeripheral.set_local_config(cfgBytes)
 
         while True:
-            if sp.is_connected():    # Check of a BLE connection is established
-                sp.on_write(on_rx)   # Set the callback function for data reception
-
+            if ledPeripheral.is_connected():    # Check if a BLE connection is established
+                #--- Make sure callbacks are set.
+                if ledPeripheral._setLED_callback is None:
+                    print("Connection Ready")
+                    ledPeripheral.set_setLED_callback(on_setLED_rx)   # Set the callback function for data reception
+                    ledPeripheral.set_allOff_callback(on_allOff_rx)
+                    ledPeripheral.set_setBright_callback(on_setBright_rx)
+                    ledPeripheral.set_sceneSave_callback(on_sceneSave_rx)
+                    ledPeripheral.set_sceneSelect_callback(on_sceneSelect_rx)
+                    ledPeripheral.set_setCtrlType_callback(on_setCtrlType_rx)
+                sleep(1)
 
     except KeyboardInterrupt:
         print("Finished.")
