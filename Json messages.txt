@@ -106,9 +106,10 @@ Set Controller Type:
 	{'1': {'Type': '4Chan', 'Name': 'Cabinets', 'ChanNames': {'R':'Cabinet1', 'G':'Cabinet2', 'B':'Cabinet3', 'W':'Cabinet4'}}}
 	
 Send Configuration:
-    {"SendConfig": 1}
-	This requests the configuration from the controller.
-	Set up an LCAP channel and send the configuration file.
+    TBD - This is not finished or implemented yet.  If you read the config characteristic,
+	you will get the first 244 characters of the json message.  However, this is a partial
+	message and so will not be properly formed so it can't be decoded.
+	This will probably be implemented as an LCAP channel and send the configuration file.
 	
     The message below is the return message containing the configuration that will 
 	come to the phone app from the controller when the app first connects to the 
