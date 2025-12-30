@@ -298,7 +298,7 @@ def set_rgbw(ctrlNum, r, g, b, w, rb, gb, bb, wb):
 #--- Take in a data dictionary that was built from a
 #--- json string that has the controller number and 
 #--- one index. The index will be for one of the
-#--- 4 channel. Set the brightness of the LED.
+#--- 4 channels. Set the brightness of the LED.
 #--- This expects only one controller message to be 
 #--- in the JSON string with only one channel being set.
 #------------------------------------------------
@@ -312,16 +312,19 @@ def set_4Chan_json(jsonData):
     ctrlNum = next(iter(jsonData))
     chanDict = jsonData[ctrlNum]
     chanKey = next(iter(chanDict))
-    chanValue = chanDict[chanKey]
+    chanValue = int(chanDict[chanKey])
+    
+    print("Chan key: " + chanKey + " Chan value: " + str(chanValue))
+
     saved_rgbw_values[ctrlNum + chanKey] = chanValue
-    chanBright = rgbw_brightness[ctrlNum + chanKey]
+    brightValue = rgbw_brightness[ctrlNum + chanKey]
 
     #--- Brightness ratios
-    mulVal = LED_Dimmer_multiply_Array[chanValue]
-    divVal = LED_Dimmer_divide_Array[chanValue]
+    mulVal = LED_Dimmer_multiply_Array[brightValue]
+    divVal = LED_Dimmer_divide_Array[brightValue]
         
     # Convert 0–255 to 0–65535 duty cycle and set the actual LED.
-    rgbw_pins[ctrlNum + chanKey].duty_u16(int(chanValue / 255 * 65535 * mulVal / mulVal))
+    rgbw_pins[ctrlNum + chanKey].duty_u16(int(saved_rgbw_values[ctrlNum + chanKey] / 255 * 65535 * mulVal / divVal))
 
 
 #------------------------------------------------
@@ -451,8 +454,8 @@ def set_rgbw_json(ledData):
 #--- set_brightness_4Chan
 #--- Take in a data dictionary that was built from a
 #--- json string that has the controller number and 
-#--- one index. The index will be either for one of 
-#--- the 4 channel. Set the brightness of the 
+#--- one index. The index will be for one of the
+#--- 4 channels. Set the brightness of the 
 #--- appropriate LED.
 #--- This expects only one controller message to be 
 #--- in the JSON string with only one channel being set.
@@ -467,7 +470,8 @@ def set_brightness_4Chan(jsonData):
     ctrlNum = next(iter(jsonData))
     chanDict = jsonData[ctrlNum]
     chanKey = next(iter(chanDict))
-    chanValue = chanDict[chanKey]
+    chanValue = int(chanDict[chanKey])
+    print("Chan key: " + chanKey + " Chan value: " + str(chanValue))
     rgbw_brightness[ctrlNum + chanKey] = chanValue
     rgbw_value = saved_rgbw_values[ctrlNum + chanKey]
 
@@ -502,7 +506,11 @@ def set_brightness_rgb_plus_one(jsonData):
               saved_rgbw_values[ctrlNum + "W"],
               rgbw_brightness[ctrlNum + "W"]) 
     else:
-        #--- Else, is the RGB channel
+        #--- Else, is the RGB channel. Save brightness and set LED.
+        rgbw_brightness[ctrlNum + "R"] = int(jsonData[ctrlNum]["R"])
+        rgbw_brightness[ctrlNum + "G"] = int(jsonData[ctrlNum]["G"])
+        rgbw_brightness[ctrlNum + "B"] = int(jsonData[ctrlNum]["B"])
+
         set_rgb(int(ctrlNum),
                 saved_rgbw_values[ctrlNum + "R"],
                 saved_rgbw_values[ctrlNum + "G"],
