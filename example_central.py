@@ -61,6 +61,45 @@ def rgbw_brightness_string(ctrlNum, val):
 
 
 #----------------------------------------------------------------
+#--- rgbw_1_brightness_string
+#--- Take a controller number and brightness value and build a 
+#--- short json string to set the brightness of the RGB LED of
+#--- an RGB+1 controller..
+#----------------------------------------------------------------
+def rgb_1_brightness_string(ctrlNum, val):
+    #--- {'1':{'W':'255'}}
+    chanVal = {}
+    ctrlStr = {}
+    chanVal['R'] = val
+    chanVal['G'] = val
+    chanVal['B'] = val
+    ctrlStr[ctrlNum] = chanVal
+    cfgDataStr = json.dumps(ctrlStr)
+    bcfgDataStr = cfgDataStr.encode('utf-8')
+
+    return bcfgDataStr
+
+
+#----------------------------------------------------------------
+#--- rgbw_1_brightness_string
+#--- Take a controller number and brightness value and build a 
+#--- short json string to set the brightness of the RGB LED of
+#--- an RGB+1 controller. The assumption is that chanNum is a
+#--- character.
+#----------------------------------------------------------------
+def fourChan_brightness_string(ctrlNum, chanNum, val):
+    #--- {'1':{'W':'255'}}
+    chanVal = {}
+    ctrlStr = {}
+    chanVal[chanNum] = val
+    ctrlStr[ctrlNum] = chanVal
+    cfgDataStr = json.dumps(ctrlStr)
+    bcfgDataStr = cfgDataStr.encode('utf-8')
+
+    return bcfgDataStr
+
+
+#----------------------------------------------------------------
 #--- one_led_string
 #--- Take a controller number, channel, and value and build a 
 #--- short json string to set an LED.
@@ -169,6 +208,8 @@ def set_ctrl_type_string(ctrlNum):
 #----------------------------------------------------------------
 #--- build_short_json_string
 #--- Build a short json string to test the write functionality
+#--- Set a single LED for a controller.  This assumes that
+#--- controller 1 and 4 are RGBW, 2 is RGB+1, and 3 is 4Chan.
 #----------------------------------------------------------------
 def build_short_json_string(ctrlVal):
     #--- {'1':{'W':'255'}}
@@ -183,12 +224,12 @@ def build_short_json_string(ctrlVal):
         chanVal["R"] = "000"
         chanVal["G"] = "255"
         chanVal["B"] = "000"
-        chanVal["W"] = "000"
+#        chanVal["W"] = "000"
     elif 3 == ctrlVal:
-        chanVal["R"] = "000"
-        chanVal["G"] = "000"
+#        chanVal["R"] = "000"
+#        chanVal["G"] = "000"
         chanVal["B"] = "255"
-        chanVal["W"] = "000"
+#        chanVal["W"] = "000"
     else:
         chanVal["R"] = "000"
         chanVal["G"] = "000"
@@ -342,16 +383,18 @@ async def main():
             while True:
 
                 idx = int(input("Select Operation: \n" +
-                                "1: Set CTRL 1 LED \n" + 
-                                "2: Set CTRL 2 LED \n" + 
-                                "3: Set CTRL 3 LED \n" + 
-                                "4: Set CTRL 4 LED \n" + 
+                                "1: Set CTRL 1 LED (Set RGBW type first!)\n" + 
+                                "2: Set CTRL 2 LED (Set RGB+1 type first!)\n" + 
+                                "3: Set CTRL 3 LED (Set 4Chan type first!)\n" + 
+                                "4: Set CTRL 4 LED (Set RGBW type first!)\n" + 
                                 "5: Rotate Brightness \n" + 
                                 "6: All Off \n" +
                                 "7: Select Scene\n" +
                                 "8: Save Scene\n" +
                                 "9: Set Ctrl Type\n" +
-                                "10: Read Config \n"  ))
+                                "10: Rotate Brightness RGB+1\n" +
+                                "11: Rotate Brightness 4Chan\n" +
+                                "20: Read Config \n"  ))
 
                 if 1 == idx:
                     #--- Write json byte string to peripheral
@@ -413,8 +456,28 @@ async def main():
                     json_str = set_ctrl_type_string(4)
                     await set_ctrl_type_char.write(json_str)
                     await asyncio.sleep_ms(750)
-
+                    
                 elif 10 == idx:
+                    if dimIndex == 3:
+                        dimIndex = 0
+                    else:
+                        dimIndex = dimIndex + 1
+                    
+                    json_str = rgb_1_brightness_string(2, dimIndex)
+#                    print("Brightness string: ", json_str)
+                    await brightness_char.write(json_str)
+
+                elif 11 == idx:
+                    if dimIndex == 3:
+                        dimIndex = 0
+                    else:
+                        dimIndex = dimIndex + 1
+                    
+                    json_str = fourChan_brightness_string(3, 'B', dimIndex)
+#                    print("Brightness string: ", json_str)
+                    await brightness_char.write(json_str)
+
+                elif 20 == idx:
                     try:
                         config_str = await config_char.read()
 
