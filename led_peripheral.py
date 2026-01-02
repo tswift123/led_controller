@@ -110,7 +110,7 @@ class LEDPeripheral:
         elif event == _IRQ_GATTS_WRITE:
             conn_handle, value_handle = data
             value = self._ble.gatts_read(value_handle)
-            print("Write request on handle:", value_handle, "with value:", value)
+#            print("Write request on handle:", value_handle, "with value:", value)
 #            print("setType handle:", self._handle_setCtrlType)
 #            print("Callback:", self._setCtrlType_callback)
             if value_handle == self._handle_setLED and self._setLED_callback:
