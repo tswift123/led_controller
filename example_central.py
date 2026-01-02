@@ -120,10 +120,10 @@ def one_led_string(ctrlNum, chan, val):
 #--- save_scene_string
 #--- Build the short json string to save the current state of the LEDs.
 #----------------------------------------------------------------
-def save_scene_string():
+def save_scene_string(sceneNum):
     ctrlStr = {}
     sceneStr = {}
-    sceneStr[1] = "ASceneName"
+    sceneStr[sceneNum] = "ASceneName"
     ctrlStr["SaveScene"] = sceneStr
     cfgDataStr = json.dumps(ctrlStr)
     bcfgDataStr = cfgDataStr.encode('utf-8')
@@ -135,9 +135,9 @@ def save_scene_string():
 #--- select_scene_string
 #--- Build the short json string to select a previously stored scene.
 #----------------------------------------------------------------
-def select_scene_string():
+def select_scene_string(sceneNum):
     ctrlStr = {}
-    ctrlStr["LEDScene"] = 1
+    ctrlStr["LEDScene"] = sceneNum
     cfgDataStr = json.dumps(ctrlStr)
     bcfgDataStr = cfgDataStr.encode('utf-8')
 
@@ -378,7 +378,7 @@ async def main():
                 await asyncio.sleep_ms(5000)
                 continue
 
-            dimIndex = 3
+            dimIndex = 1
 
             while True:
 
@@ -389,11 +389,13 @@ async def main():
                                 "4: Set CTRL 4 LED (Set RGBW type first!)\n" + 
                                 "5: Rotate Brightness \n" + 
                                 "6: All Off \n" +
-                                "7: Select Scene\n" +
-                                "8: Save Scene\n" +
+                                "7: Select Scene 1\n" +
+                                "8: Save Scene 1\n" +
                                 "9: Set Ctrl Type\n" +
                                 "10: Rotate Brightness RGB+1\n" +
                                 "11: Rotate Brightness 4Chan\n" +
+                                "12: Select Scene 2\n" +
+                                "13: Save Scene 2\n" +
                                 "20: Read Config \n"  ))
 
                 if 1 == idx:
@@ -419,10 +421,10 @@ async def main():
                     await set_led_char.write(json_str)
                     
                 elif 5 == idx:
-                    if dimIndex == 3:
-                        dimIndex = 0
+                    if dimIndex >= 100:
+                        dimIndex = 1
                     else:
-                        dimIndex = dimIndex + 1
+                        dimIndex = dimIndex + 5
                     
                     json_str = rgbw_brightness_string(1, dimIndex)
 #                    print("Brightness string: ", json_str)
@@ -434,12 +436,12 @@ async def main():
                     await all_off_char.write(json_str)
 
                 elif 7 == idx:
-                    json_str = select_scene_string()
+                    json_str = select_scene_string(1)
 #                    print("Select scene string: ", json_str)
                     await select_scene_char.write(json_str)
 
                 elif 8 == idx:
-                    json_str = save_scene_string()
+                    json_str = save_scene_string(1)
 #                    print("Save scene string: ", json_str)
                     await save_scene_char.write(json_str)
 
@@ -458,24 +460,34 @@ async def main():
                     await asyncio.sleep_ms(750)
                     
                 elif 10 == idx:
-                    if dimIndex == 3:
-                        dimIndex = 0
+                    if dimIndex >= 100:
+                        dimIndex = 1
                     else:
-                        dimIndex = dimIndex + 1
+                        dimIndex = dimIndex + 5
                     
                     json_str = rgb_1_brightness_string(2, dimIndex)
 #                    print("Brightness string: ", json_str)
                     await brightness_char.write(json_str)
 
                 elif 11 == idx:
-                    if dimIndex == 3:
-                        dimIndex = 0
+                    if dimIndex >= 100:
+                        dimIndex = 1
                     else:
-                        dimIndex = dimIndex + 1
+                        dimIndex = dimIndex + 5
                     
                     json_str = fourChan_brightness_string(3, 'B', dimIndex)
 #                    print("Brightness string: ", json_str)
                     await brightness_char.write(json_str)
+
+                elif 12 == idx:
+                    json_str = select_scene_string(2)
+#                    print("Select scene string: ", json_str)
+                    await select_scene_char.write(json_str)
+
+                elif 13 == idx:
+                    json_str = save_scene_string(2)
+#                    print("Save scene string: ", json_str)
+                    await save_scene_char.write(json_str)
 
                 elif 20 == idx:
                     try:

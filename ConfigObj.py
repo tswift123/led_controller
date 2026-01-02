@@ -70,7 +70,7 @@ class ConfigObj:
     #----------------------------------------------
     def set_ctrl_type(self, ctrlNum, aType):
         self.config_dict[ctrlNum]["Type"] = aType
-        print("Setting Ctrl Type: ", aType)
+#        print("Setting Ctrl Type: ", aType)
         self.write_to_file()
 
 
@@ -163,7 +163,7 @@ class ConfigObj:
         self.controller3["1"]["Name"] = "Ctrl3"         # Other attributes set by class
         self.controller4["1"]["Name"] = "Ctrl4"         # Other attributes set by class
 
-        print(self.config_dict)
+ #       print("Default config data: ", self.config_dict)
         return json.dumps(self.config_dict)
 
 
