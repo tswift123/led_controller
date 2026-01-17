@@ -451,25 +451,32 @@ def set_a_scene(data):
 #--- retrieve that scene from a file and turn on the LEDs.
 #---
 #----------------------------------------------------------------
-def load_scene(sceneNum):
+def load_scene(oneSceneNum):
+
+    sceneNum = int(oneSceneNum)
+    config_file_path = ""
+    sceneKey = ""
 
     if sceneNum == 1:
 #        print("Found load scene 1")
         config_file_path = "Scene1.json"
         sceneKey = "1"
 
-    if sceneNum == 2:
+    elif sceneNum == 2:
         config_file_path = "Scene2.json"
         sceneKey = "2"
 
-    if sceneNum == 3:
+    elif sceneNum == 3:
         config_file_path = "Scene3.json"
         sceneKey = "3"
 
-    if sceneNum == 4:
+    elif sceneNum == 4:
         config_file_path = "Scene4.json"
         sceneKey = "4"
 
+    else:
+        print("Invalid scene number: ", sceneNum)
+        return 
 
     sceneData = {}
 
