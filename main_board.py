@@ -575,9 +575,7 @@ def on_sceneSave_rx(data):
     dataStr = data.decode('utf-8')
     localDict = ujson.loads(dataStr)
  
-    if "SaveScene" in localDict:
-        sceneConfigData = localDict["SaveScene"]
-        save_scene(sceneConfigData)
+    save_scene(localDict)
 
 
 

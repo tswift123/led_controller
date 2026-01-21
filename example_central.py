@@ -124,8 +124,7 @@ def save_scene_string(sceneNum):
     ctrlStr = {}
     sceneStr = {}
     sceneStr[sceneNum] = "ASceneName"
-    ctrlStr["SaveScene"] = sceneStr
-    cfgDataStr = json.dumps(ctrlStr)
+    cfgDataStr = json.dumps(sceneStr)
     bcfgDataStr = cfgDataStr.encode('utf-8')
 
     return bcfgDataStr
@@ -218,23 +217,23 @@ def build_short_json_string(ctrlVal):
     if 1 == ctrlVal:
         chanVal["R"] = "255"
         chanVal["G"] = "000"
-        chanVal["B"] = "000"
+        chanVal["B"] = "067"
         chanVal["W"] = "000"
     elif 2 == ctrlVal:
-        chanVal["R"] = "000"
-        chanVal["G"] = "255"
-        chanVal["B"] = "000"
+        chanVal["R"] = "255"
+        chanVal["G"] = "000"
+        chanVal["B"] = "038"
 #        chanVal["W"] = "000"
     elif 3 == ctrlVal:
-#        chanVal["R"] = "000"
+        chanVal["R"] = "255"
 #        chanVal["G"] = "000"
-        chanVal["B"] = "255"
+#        chanVal["B"] = "255"
 #        chanVal["W"] = "000"
     else:
-        chanVal["R"] = "000"
+        chanVal["R"] = "255"
         chanVal["G"] = "000"
-        chanVal["B"] = "000"
-        chanVal["W"] = "255"
+        chanVal["B"] = "041"
+        chanVal["W"] = "000"
 
     ctrlStr[ctrlVal] = chanVal
     cfgDataStr = json.dumps(ctrlStr)

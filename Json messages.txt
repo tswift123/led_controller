@@ -83,7 +83,7 @@ Scene Selection:
 	e.g. {"LEDScene": "1"}
 	
 Scene Save Configuration:
-	{"SaveScene": {scene#: name}}
+	{scene#: name}
 	Where scene# is a number from 1 to 4 corresponding to the four scenes that can be saved.
 	name is the custom name the user entered.  Maximum of 10 characters.  When this is
 	invoked, how the LEDs are set on the 4 controllers is saved to a file.
