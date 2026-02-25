@@ -43,6 +43,7 @@ CHAR_UUIDS = [
     bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c55"),
     bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c56"),
     bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c57"),
+    bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c58"),
 ]
 
 
@@ -54,9 +55,10 @@ allOff_char = (CHAR_UUIDS[3], _FLAG_WRITE)
 sceneSelect_char = (CHAR_UUIDS[4], _FLAG_WRITE)
 sceneSave_char = (CHAR_UUIDS[5], _FLAG_WRITE)
 ctrlType_char = (CHAR_UUIDS[6], _FLAG_WRITE)
+setID_char = (CHAR_UUIDS[7], _FLAG_WRITE)
 
 # Create the BLE service
-charSet = (config_char, set_led_char, setBright_char, allOff_char, sceneSelect_char, sceneSave_char, ctrlType_char)
+charSet = (config_char, set_led_char, setBright_char, allOff_char, sceneSelect_char, sceneSave_char, ctrlType_char, setID_char)
 service2 = (SERVICE_UUID, charSet)
 SERVICES = (service2,)
 
@@ -73,7 +75,8 @@ class LEDPeripheral:
           self._handle_allOff, 
           self._handle_sceneSelect, 
           self._handle_sceneSave,
-          self._handle_setCtrlType,),) = self._ble.gatts_register_services(SERVICES)
+          self._handle_setCtrlType,
+          self._handle_setID),) = self._ble.gatts_register_services(SERVICES)
         self._connections = set()
 #        self._config_callback = None
         self._setLED_callback = None
@@ -82,6 +85,8 @@ class LEDPeripheral:
         self._sceneSelect_callback = None
         self._sceneSave_callback = None
         self._setCtrlType_callback = None
+        self._setID_callback = None
+        self._long_string_data = None
         self._payload = advertising_payload(name=name, services=[SERVICE_UUID])
         self._ble.config(mtu=244)
         self._ble.gatts_set_buffer(self._handle_config, 244)
@@ -91,6 +96,7 @@ class LEDPeripheral:
         self._ble.gatts_set_buffer(self._handle_sceneSelect, 244)
         self._ble.gatts_set_buffer(self._handle_sceneSave, 244)
         self._ble.gatts_set_buffer(self._handle_setCtrlType, 244)
+        self._ble.gatts_set_buffer(self._handle_setID, 244)
         print("payload:", self._payload)
         print("Length:", len(self._payload))
         self._advertise()
@@ -125,10 +131,17 @@ class LEDPeripheral:
                 self._sceneSave_callback(value)
             elif value_handle == self._handle_setCtrlType and self._setCtrlType_callback:
                 self._setCtrlType_callback(value)
+            elif value_handle == self._handle_setID and self._setID_callback:
+                self._setID_callback(value)
             else:
                 print("Handle without a callback: ", value_handle)
         elif event == _IRQ_GATTS_READ_REQUEST:
-            self.send(None)
+            conn_handle, value_handle = data
+            # Send long string if config characteristic is being read
+            if value_handle == self._handle_config and self._long_string_data:
+                self.send_long_string(self._long_string_data, self._handle_config)
+            else:
+                self.send(b'Missing config')
 
     def set_local_config(self, config):
         self._ble.gatts_write(self._handle_config, config)
@@ -165,3 +178,53 @@ class LEDPeripheral:
     def set_setCtrlType_callback(self, callback):
         self._setCtrlType_callback = callback
 
+    def set_setID_callback(self, callback):
+        self._setID_callback = callback
+
+    def set_long_string_data(self, long_string):
+        """
+        Set the long string data to be sent when the config characteristic is read.
+        
+        Args:
+            long_string: The string to store for transmission (str or bytes)
+        """
+        self._long_string_data = long_string
+
+    def send_long_string(self, long_string, characteristic_handle, chunk_size=240):
+        """
+        Send a long string over BLE by chunking it into MTU-sized pieces.
+        
+        Args:
+            long_string: The string to send (will be encoded to bytes)
+            characteristic_handle: The characteristic handle to write to
+            chunk_size: Maximum bytes per chunk (default 240, leaving room for BLE overhead)
+        
+        Returns:
+            True if all chunks sent successfully, False otherwise
+        """
+        if isinstance(long_string, str):
+            data = long_string.encode('utf-8')
+        else:
+            data = long_string
+        
+        total_length = len(data)
+        chunks_sent = 0
+        
+        try:
+            for i in range(0, total_length, chunk_size):
+                chunk = data[i:i + chunk_size]
+                self._ble.gatts_write(characteristic_handle, chunk)
+                
+                # Notify all connected centrals of the data
+                for conn_handle in self._connections:
+                    self._ble.gatts_notify(conn_handle, characteristic_handle, chunk)
+                
+                chunks_sent += 1
+                time.sleep(0.01)  # Small delay between chunks to avoid overwhelming the central
+            
+            print(f"Long string sent successfully in {chunks_sent} chunks ({total_length} bytes)")
+            return True
+            
+        except Exception as e:
+            print(f"Error sending long string: {e}")
+            return False
