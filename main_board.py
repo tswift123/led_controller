@@ -687,6 +687,26 @@ def on_setCtrlType_rx(data):
     set_channel_names(ctrlNum, chanNames)
 
 
+#----------------------------------------------------------------
+#--- on_setID_rx
+#--- Define a callback function to handle a received command
+#--- to turn all LEDs off.
+#---
+#--- duty_u16 is ratio of duty_cycle / 65535
+#--- So we have to convert 0 to 255 into 0 to 65535
+#----------------------------------------------------------------
+def on_setID_rx(data):
+    print("setID Data received: ", data)  # Print the received data
+
+    #--- It doesn't matter what the message is, we are just
+    #--- turning everything off.
+    localDict = {}
+    dataStr = data.decode('utf-8')
+    localDict = ujson.loads(dataStr)
+    #--- REMOVE BEFORE FLIGHT - Do something with the data.
+
+
+
 #----------------------------------------------------------
 #--- main
 #----------------------------------------------------------
@@ -711,7 +731,9 @@ def main():
         cfgStr = cfgObj.to_json()
 #        cfgStr = ujson.dumps(cfgDict)
         cfgBytes = cfgStr.encode('utf-8')
-        ledPeripheral.set_local_config(cfgBytes)
+        ledPeripheral.set_long_string_data(cfgBytes)
+#        numBytes = len(cfgBytes)
+#        ledPeripheral.set_local_config(numBytes)
 
         while True:
             if ledPeripheral.is_connected():    # Check if a BLE connection is established
@@ -724,6 +746,7 @@ def main():
                     ledPeripheral.set_sceneSave_callback(on_sceneSave_rx)
                     ledPeripheral.set_sceneSelect_callback(on_sceneSelect_rx)
                     ledPeripheral.set_setCtrlType_callback(on_setCtrlType_rx)
+                    ledPeripheral.set_setID_callback(on_setID_rx)
                 sleep(1)
 
     except KeyboardInterrupt:

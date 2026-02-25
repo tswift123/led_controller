@@ -29,6 +29,7 @@ ALL_OFF_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c54")
 SELECT_SCENE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c55")
 SAVE_SCENE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c56")
 SET_CTRL_TYPE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c57")
+SET_BOX_ID_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c58")
 
 SCAN_DURATION_MS = const(5000)
 SCAN_INTERVAL_US = const(30000)
@@ -38,6 +39,61 @@ SCAN_WINDOW_US = const(30000)
 # MAX_CHUNK = const(MAX_MTU - 3)
 # MAX_CHUNKS = const(10)
 # MAX_DATA = const(MAX_CHUNK * MAX_CHUNKS)
+
+# Chunked data receiver configuration
+CHUNK_TIMEOUT_MS = 500  # Timeout to wait for next chunk before considering transfer complete
+MAX_WAIT_MS = 5000      # Maximum time to wait for chunks to arrive
+
+
+#----------------------------------------------------------------
+#--- ChunkedDataReceiver
+#--- Helper class to receive and reassemble chunked BLE data
+#--- from a characteristic's notifications.
+#----------------------------------------------------------------
+class ChunkedDataReceiver:
+    def __init__(self, timeout_ms=CHUNK_TIMEOUT_MS, max_wait_ms=MAX_WAIT_MS):
+        self.chunks = []
+        self.timeout_ms = timeout_ms
+        self.max_wait_ms = max_wait_ms
+        
+    def add_chunk(self, data):
+        """Add a received chunk to the buffer."""
+        self.chunks.append(data)
+        
+    def reset(self):
+        """Reset the receiver for a new transfer."""
+        self.chunks = []
+        
+    async def wait_for_chunks(self):
+        """
+        Wait for chunks to arrive until timeout occurs or max_wait time exceeded.
+        Returns the reassembled data when complete.
+        """
+        self.reset()
+        last_chunk_count = 0
+        
+        while True:
+            # Check if we got a new chunk
+            if len(self.chunks) > last_chunk_count:
+                last_chunk_count = len(self.chunks)
+                print(f"Received chunk {last_chunk_count}, size: {len(self.chunks[-1])} bytes")
+            
+            await asyncio.sleep_ms(50)
+            
+        return self.reassemble()
+    
+    def reassemble(self):
+        """Reassemble all chunks into a single bytes object."""
+        if not self.chunks:
+            return b''
+        return b''.join(self.chunks)
+    
+    def reassemble_string(self):
+        """Reassemble chunks and decode as UTF-8 string."""
+        data = self.reassemble()
+        if data:
+            return data.decode('utf-8', errors='ignore')
+        return ''
 
 
 #----------------------------------------------------------------
@@ -288,6 +344,81 @@ def build_json_string():
 
 
 #-------------------------------------------------------
+#--- read_chunked_config
+#--- This function will request and read a chunked long string
+#--- from the config_char characteristic. It subscribes to
+#--- notifications, triggers a read, and waits for all chunks
+#--- to arrive before reassembling and returning the data.
+#-------------------------------------------------------
+async def read_chunked_config(config_char, receiver):
+    """
+    Read a chunked long string from the config characteristic.
+    
+    Args:
+        config_char: The config characteristic object
+        receiver: ChunkedDataReceiver instance to collect chunks
+        
+    Returns:
+        The reassembled string data
+    """
+    try:
+        print("Subscribing to config notifications...")
+        await config_char.subscribe(notify=True)
+        
+        print("Requesting config data...")
+        # Trigger the read by reading the characteristic
+        # This sends a read request to the peripheral
+        await config_char.read()
+        
+        # Wait for chunks to arrive via notifications
+        print("Waiting for chunked data...")
+        
+        # Set up a notification handler
+        def handle_notification(data):
+            receiver.add_chunk(data)
+        
+        # For aioble, we need to use a different approach
+        # We'll monitor for notifications by reading the characteristic value repeatedly
+        # while waiting for callbacks
+        timeout = 2  # 2 second timeout
+        
+        # Since we can't easily set up just a notification callback in aioble
+        # We'll read multiple times with waits to collect chunks
+        receiver.reset()
+        last_read_data = None
+        
+        while True:
+            databytes = []
+
+            try:
+                # Try to read the characteristic
+#                data = asyncio.wait_for(config_char.read(), timeout=2.0)
+                data = await config_char.read()
+                if data and data != last_read_data:
+                    print("Type of data: ", type(data))
+                    receiver.add_chunk(data)
+                    last_read_data = data
+                    print(f"Chunk received:", data)
+                
+                # Check for end of string
+#                dataBytes = bytes(data)
+#                if dataBytes.count(b'\n') > 0:
+#                    print(f"End of string found")
+#                    break
+            except asyncio.TimeoutError:
+                print(f"Timeout waiting for chunk")
+                break
+            
+            await asyncio.sleep_ms(100)
+        
+        return receiver.reassemble()
+        
+    except Exception as e:
+        print(f"Exception in read_chunked_config: {e}")
+        return b''
+
+
+#-------------------------------------------------------
 #--- find_other_board
 #--- This function will scan for the pico board with the
 #--- correct service UUID and return the device if found.
@@ -361,6 +492,11 @@ async def main():
                     await asyncio.sleep_ms(5000)
                     continue
                 print("LED service:", led_service)
+                
+                someChars = led_service.characteristics()
+                async for aChar in someChars:
+                    print(f"  Characteristic found: {aChar}")
+                
                 config_char = await led_service.characteristic(CONFIG_CHAR_UUID)
                 set_led_char = await led_service.characteristic(SET_LED_CHAR_UUID)
                 brightness_char = await led_service.characteristic(SET_BRIGHT_CHAR_UUID)
@@ -378,6 +514,9 @@ async def main():
                 continue
 
             dimIndex = 1
+
+            # Create a chunked data receiver for reading config data
+            config_receiver = ChunkedDataReceiver()
 
             while True:
 
@@ -489,16 +628,26 @@ async def main():
                     await save_scene_char.write(json_str)
 
                 elif 20 == idx:
+                    # Read chunked long string from config characteristic
                     try:
-                        config_str = await config_char.read()
-
-                        if config_str is not None:
-                            print("Config data: ", config_str)
-                            print("Length: ", len(config_str))
+                        print("Reading chunked config data...")
+                        config_data = await read_chunked_config(config_char, config_receiver)
+                        
+                        if config_data:
+                            print(f"Config data received ({len(config_data)} bytes)")
+                            print("Data (bytes):", config_data)
+                            
+                            # Try to decode and print as string
+                            try:
+                                config_str = config_data.decode('utf-8', errors='ignore')
+                                print("Data (string):", config_str)
+                                print("Length:", len(config_str))
+                            except Exception as e:
+                                print(f"Could not decode as string: {e}")
                         else:
-                            print("No config data read")
+                            print("No config data received")
                     except Exception as e:
-                        print("Exception reading config char: ", e)
+                        print(f"Exception reading chunked config: {e}")
                         await asyncio.sleep_ms(500)
                         continue
 
