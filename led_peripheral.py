@@ -182,13 +182,10 @@ class LEDPeripheral:
         self._setID_callback = callback
 
     def set_long_string_data(self, long_string):
-        """
-        Set the long string data to be sent when the config characteristic is read.
-        
-        Args:
-            long_string: The string to store for transmission (str or bytes)
-        """
+        #--- Set the long string data to be sent when the config characteristic is read.
         self._long_string_data = long_string
+#        print("Long string (length: {} bytes)".format(len(long_string)))
+#        print("Long string: ", self._long_string_data)
 
     def send_long_string(self, long_string, characteristic_handle, chunk_size=240):
         """
@@ -208,11 +205,13 @@ class LEDPeripheral:
             data = long_string
         
         total_length = len(data)
+        print("Peripheral thinks length is {} bytes".format(total_length))
         chunks_sent = 0
         
         try:
             for i in range(0, total_length, chunk_size):
                 chunk = data[i:i + chunk_size]
+                print("Chunk to send: ", chunk)
                 self._ble.gatts_write(characteristic_handle, chunk)
                 
                 # Notify all connected centrals of the data
@@ -220,7 +219,7 @@ class LEDPeripheral:
                     self._ble.gatts_notify(conn_handle, characteristic_handle, chunk)
                 
                 chunks_sent += 1
-                time.sleep(0.01)  # Small delay between chunks to avoid overwhelming the central
+                time.sleep(0.02)  # Small delay between chunks to avoid overwhelming the central
             
             print(f"Long string sent successfully in {chunks_sent} chunks ({total_length} bytes)")
             return True

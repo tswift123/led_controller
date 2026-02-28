@@ -349,49 +349,47 @@ def build_json_string():
 #--- from the config_char characteristic. It subscribes to
 #--- notifications, triggers a read, and waits for all chunks
 #--- to arrive before reassembling and returning the data.
+#---
+#--- Args:
+#---     config_char: The config characteristic object
+#---     receiver: ChunkedDataReceiver instance to collect chunks
+#---        
+#--- Returns:
+#---     The reassembled string data
 #-------------------------------------------------------
 async def read_chunked_config(config_char, receiver):
-    """
-    Read a chunked long string from the config characteristic.
     
-    Args:
-        config_char: The config characteristic object
-        receiver: ChunkedDataReceiver instance to collect chunks
-        
-    Returns:
-        The reassembled string data
-    """
     try:
         print("Subscribing to config notifications...")
         await config_char.subscribe(notify=True)
         
         print("Requesting config data...")
-        # Trigger the read by reading the characteristic
-        # This sends a read request to the peripheral
-        await config_char.read()
-        
-        # Wait for chunks to arrive via notifications
-        print("Waiting for chunked data...")
         
         # Set up a notification handler
-        def handle_notification(data):
-            receiver.add_chunk(data)
-        
-        # For aioble, we need to use a different approach
-        # We'll monitor for notifications by reading the characteristic value repeatedly
-        # while waiting for callbacks
-        timeout = 2  # 2 second timeout
+#        def handle_notification(data):
+#            receiver.add_chunk(data)
         
         # Since we can't easily set up just a notification callback in aioble
         # We'll read multiple times with waits to collect chunks
         receiver.reset()
         last_read_data = None
         
+        #-- Trigger the read by reading the characteristic
+        #--- The first chunck is gotten by this read.
+        data = await config_char.read()
+        print("Type of data: ", type(data))
+        receiver.add_chunk(data)
+        last_read_data = data
+        print(f"First Chunk received:", data)
+        
+        # Wait for chunks to arrive via notifications
+        print("Waiting for chunked data...")
+        
         while True:
             databytes = []
 
             try:
-                # Try to read the characteristic
+                #--- Try to read the characteristic
 #                data = asyncio.wait_for(config_char.read(), timeout=2.0)
                 data = await config_char.read()
                 if data and data != last_read_data:
@@ -400,16 +398,17 @@ async def read_chunked_config(config_char, receiver):
                     last_read_data = data
                     print(f"Chunk received:", data)
                 
-                # Check for end of string
-#                dataBytes = bytes(data)
-#                if dataBytes.count(b'\n') > 0:
-#                    print(f"End of string found")
-#                    break
+                #--- Check for end of string
+                dataBytes = bytes(data)
+                if dataBytes.count(b'\n') > 0:
+                    print(f"End of string found")
+                    break
+                
             except asyncio.TimeoutError:
                 print(f"Timeout waiting for chunk")
                 break
             
-            await asyncio.sleep_ms(100)
+            await asyncio.sleep_ms(10)
         
         return receiver.reassemble()
         

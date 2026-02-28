@@ -727,10 +727,12 @@ def main():
 
         #--- Read the config data from the file if it exists.
         #--- If it doesn't, get the default data. Then write the config
-        #--- string to the read characteristic so the app can get it.
+        #--- string to the read characteristic so the app can get it
+        #--- after appending a '\n' to the indicate the end of the string.
         cfgStr = cfgObj.to_json()
 #        cfgStr = ujson.dumps(cfgDict)
         cfgBytes = cfgStr.encode('utf-8')
+        cfgBytes += b'\n'
         ledPeripheral.set_long_string_data(cfgBytes)
 #        numBytes = len(cfgBytes)
 #        ledPeripheral.set_local_config(numBytes)
