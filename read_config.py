@@ -33,6 +33,8 @@ _IRQ_GATTC_READ_DONE = const(16)
 _IRQ_GATTC_WRITE_DONE = const(17)
 _IRQ_GATTC_NOTIFY = const(18)
 _IRQ_GATTC_INDICATE = const(19)
+_IRQ_GATTS_INDICATE_DONE = const(20)
+_IRQ_MTU_EXCHANGED = const(21)
 
 _ADV_IND = const(0x00)
 _ADV_DIRECT_IND = const(0x01)
@@ -71,10 +73,11 @@ class BLEConfigReadCentral:
 
     def _reset(self):
         # Cached name and address from a successful scan.
-        self.chunks = []
+        self.chunks = b''
         self._name = None
         self._addr_type = None
         self._addr = None
+        self.config_complete = False
 
         # Cached value (if we have one)
         self._value = None
@@ -86,13 +89,15 @@ class BLEConfigReadCentral:
         self._read_callback = None
 
         # Persistent callback for when new data is notified from the device.
-        self._notify_callback = None
+        self._notify_callback = self.my_notify_callback
 
         # Connected device.
         self._conn_handle = None
         self._start_handle = None
         self._end_handle = None
         self._value_handle = None
+        
+        self._ble.config(mtu=244)
 
     def _irq(self, event, data):
         if event == _IRQ_SCAN_RESULT:
@@ -151,11 +156,12 @@ class BLEConfigReadCentral:
                 print("Failed to find Boondocks service.")
 
         elif event == _IRQ_GATTC_CHARACTERISTIC_RESULT:
-            print("Characteristic Result")
             # Connected device returned a characteristic.
             conn_handle, def_handle, value_handle, properties, uuid = data
+            print("Characteristic Result: ", uuid)
             if conn_handle == self._conn_handle and uuid == CONFIG_CHAR_UUID:
                 self._value_handle = value_handle
+#                self._ble.gatts_set_buffer(self._value_handle, 244)
 
         elif event == _IRQ_GATTC_CHARACTERISTIC_DONE:
             print("Characteristic Done")
@@ -172,7 +178,8 @@ class BLEConfigReadCentral:
             # A read completed successfully.
             conn_handle, value_handle, char_data = data
             if conn_handle == self._conn_handle and value_handle == self._value_handle:
-                self._update_value(char_data)
+                #--- Don't need data from read
+#                self._update_value(char_data)
                 if self._read_callback:
                     self._read_callback(self._value)
                     self._read_callback = None
@@ -181,6 +188,9 @@ class BLEConfigReadCentral:
             print("Read Done")
             # Read completed (no-op).
             conn_handle, value_handle, status = data
+            
+        elif event == _IRQ_MTU_EXCHANGED:
+            print("MTU successfully exchanged")
 
         elif event == _IRQ_GATTC_NOTIFY:
             print("Notify")
@@ -189,12 +199,17 @@ class BLEConfigReadCentral:
             if conn_handle == self._conn_handle and value_handle == self._value_handle:
                 self._update_value(notify_data)
                 if self._notify_callback:
-                    self._notify_callback(self._value)
+                    self._notify_callback(notify_data)
 
     # Returns true if we've successfully connected and discovered characteristics.
     def is_connected(self):
         return self._conn_handle is not None and self._value_handle is not None
 
+    #--- Returns true if we have received all chunks.
+    def is_config_complete(self):
+        print("Checking config complete: ", self.config_complete)
+        return self.config_complete
+    
     # Find a device advertising the environmental sensor service.
     def scan(self, callback=None):
         self._addr_type = None
@@ -231,12 +246,33 @@ class BLEConfigReadCentral:
         self._notify_callback = callback
 
     def _update_value(self, data):
-        # Data is sint16 in degrees Celsius with a resolution of 0.01 degrees Celsius.
-        self._value = struct.unpack("<h", data)[0] / 100
+        # Data is part of a json string
+        self.chunks += bytes(data)
         return self._value
 
     def value(self):
-        return self._value
+        return self.chunks
+#        return self._value
+
+
+    def my_notify_callback(self, notifyData):
+        #--- Look for the end of string (\n) and if found,
+        #--- remove the end of string, and process the json.
+        dataBytes = bytes(notifyData)
+        print(dataBytes)
+        if dataBytes.count(b'\n') > 0:
+            #--- take the json string, decode it into a structure
+            #--- and apply the config settings.
+            #--- For now, just print
+            print("Found end of line")
+            self.config_complete = True
+        
+    def reassemble(self):
+        """Reassemble all chunks into a single bytes object."""
+        print("Into reassemble")
+        if not self.chunks:
+            return b''
+        return b''.join(self.chunks)
 
 
 def demo():
@@ -263,32 +299,44 @@ def demo():
             return
 
     print("Connected")
+    ble.gattc_exchange_mtu(central._conn_handle)
 
-    # Explicitly issue reads, using "print" as the callback.
-    while central.is_connected():
+    try:
+        # Explicitly issue reads, using "print" as the callback.
+        while central.is_connected():
 
+            while True:
 
-        while True:
+                idx = int(input("Select Operation: \n" +
+                                "20: Read Config \n"  ))
 
-            idx = int(input("Select Operation: \n" +
-                            "20: Read Config \n"  ))
+                if 20 == idx:
+                    #--- This callback prints 148.82.  I don't know
+                    #--- what that means but I think it is the
+                    #--- numeric value of some characters.
+                    central.read(callback=print)
 
-            if 20 == idx:
-                central.read(callback=print)
+                else:
+                    print("Invalid selection. Try again.")
+                    continue
 
-            else:
-                print("Invalid selection. Try again.")
-                continue
+                #--- Give it time to receive the chunks
+                time.sleep_ms(2000)
+                
+                if central.is_config_complete():
+                    print("Final Config: ", central.value())
+                    
 
-        time.sleep_ms(2000)
+                # Alternative to the above, just show the most recently notified value.
+                # while central.is_connected():
+                #     print(central.value())
+                #     time.sleep_ms(2000)
 
-    # Alternative to the above, just show the most recently notified value.
-    # while central.is_connected():
-    #     print(central.value())
-    #     time.sleep_ms(2000)
-
-    print("Disconnected")
+    except KeyboardInterrupt:
+        central.disconnect()
+        print("Disconnected")
 
 
 if __name__ == "__main__":
     demo()
+    
