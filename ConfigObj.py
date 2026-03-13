@@ -37,7 +37,7 @@ class ConfigObj:
     }
 
     def __init__(self):
-        pass
+        self.read_config()
 #        print("Init Config Obj")
 
 
@@ -136,7 +136,7 @@ class ConfigObj:
             #--- config data has been saved. Create
             #--- default data to return.
     #        print("Failed to open config file for write")
-            cfgData = json.dumps(self.config_dict)
+            cfgData = self.default_config_data()
         finally:
             if 'file' in locals():
                 file.close()
@@ -158,10 +158,34 @@ class ConfigObj:
         self.scene_names["3"] = "Scene3"
         self.scene_names["4"] = "Scene4"
 
-        self.controller1["1"]["Name"] = "Ctrl1"         # Other attributes set by class
-        self.controller2["1"]["Name"] = "Ctrl2"         # Other attributes set by class
-        self.controller3["1"]["Name"] = "Ctrl3"         # Other attributes set by class
-        self.controller4["1"]["Name"] = "Ctrl4"         # Other attributes set by class
+        self.controller1 = {"Name": "Ctrl1", "Type": "RGBW", "ChanNames": {"R": "", "G": "", "B": "", "W": ""}}
+        self.controller2 = {"Name": "Ctrl2", "Type": "RGBW", "ChanNames": {"R": "", "G": "", "B": "", "W": ""}}
+        self.controller3 = {"Name": "Ctrl3", "Type": "RGBW", "ChanNames": {"R": "", "G": "", "B": "", "W": ""}}
+        self.controller4 = {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"R": "", "G": "", "B": "", "W": ""}}
+        self.controller1["Name"] = "Ctrl1"        
+        self.controller2["Name"] = "Ctrl2"        
+        self.controller3["Name"] = "Ctrl3"        
+        self.controller4["Name"] = "Ctrl4"        
+        self.controller1["Type"] = "RGBW"         
+        self.controller2["Type"] = "RGBW"         
+        self.controller3["Type"] = "RGBW"         
+        self.controller4["Type"] = "RGBW"
+        self.controller1["ChanNames"]["R"] = "R"
+        self.controller1["ChanNames"]["G"] = "G"
+        self.controller1["ChanNames"]["B"] = "B"
+        self.controller1["ChanNames"]["W"] = "W"
+        self.controller2["ChanNames"]["R"] = "R"
+        self.controller2["ChanNames"]["G"] = "G"
+        self.controller2["ChanNames"]["B"] = "B"
+        self.controller2["ChanNames"]["W"] = "W"
+        self.controller3["ChanNames"]["R"] = "R"
+        self.controller3["ChanNames"]["G"] = "G"
+        self.controller3["ChanNames"]["B"] = "B"
+        self.controller3["ChanNames"]["W"] = "W"
+        self.controller4["ChanNames"]["R"] = "R"
+        self.controller4["ChanNames"]["G"] = "G"
+        self.controller4["ChanNames"]["B"] = "B"
+        self.controller4["ChanNames"]["W"] = "W"
 
  #       print("Default config data: ", self.config_dict)
         return json.dumps(self.config_dict)
@@ -173,10 +197,7 @@ class ConfigObj:
     #--- and return the json string.
     #----------------------------------------------
     def to_json(self) -> str:
-        cfg = {
-            "CFG": self.config_dict
-        }
-        return json.dumps(cfg)
+        return json.dumps(self.config_dict)
 
 
     

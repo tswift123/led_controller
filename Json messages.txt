@@ -106,10 +106,13 @@ Set Controller Type:
 	{'1': {'Type': '4Chan', 'Name': 'Cabinets', 'ChanNames': {'R':'Cabinet1', 'G':'Cabinet2', 'B':'Cabinet3', 'W':'Cabinet4'}}}
 	
 Send Configuration:
-    TBD - This is not finished or implemented yet.  If you read the config characteristic,
-	you will get the first 244 characters of the json message.  However, this is a partial
-	message and so will not be properly formed so it can't be decoded.
-	This will probably be implemented as an LCAP channel and send the configuration file.
+    To get the configuration message, the central first has to subscribe to the notify, attribute
+	of the config characteristic.  Then when the central wants the data, it reads the config
+	characteristic.  However, the central should ignore the data that comes from the read
+	command. Instead, Each notify result will contain a chunk of the config message.
+	The last chunk will be terminated by a '\n' byte. The central should append the chunks
+	while looking for the '\n'. The central should strip the '\n' before appending the last
+	chunk.  Then the message will be complete and a valid json message.
 	
     The message below is the return message containing the configuration that will 
 	come to the phone app from the controller when the app first connects to the 
@@ -125,7 +128,7 @@ Send Configuration:
 										}
 						  }
 				   Scenes:
-				               {Scene#:name}
+				            {Scene#:name}
 				  }
 	Where ctrl# is a number from 1 to 4 corresponding to controller 1 through 4
 	name is a custom name provided by the user for the controller
