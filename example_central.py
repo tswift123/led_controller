@@ -29,7 +29,7 @@ ALL_OFF_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c54")
 SELECT_SCENE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c55")
 SAVE_SCENE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c56")
 SET_CTRL_TYPE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c57")
-SET_BOX_ID_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c58")
+BOX_ID_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c58")
 
 SCAN_DURATION_MS = const(5000)
 SCAN_INTERVAL_US = const(30000)
@@ -503,6 +503,7 @@ async def main():
                 select_scene_char = await led_service.characteristic(SELECT_SCENE_CHAR_UUID)
                 save_scene_char = await led_service.characteristic(SAVE_SCENE_CHAR_UUID)
                 set_ctrl_type_char = await led_service.characteristic(SET_CTRL_TYPE_CHAR_UUID)
+                box_id_char = await led_service.characteristic(BOX_ID_CHAR_UUID)
             except asyncio.TimeoutError:
                 print("Timeout discovering services/characteristics")
                 await asyncio.sleep_ms(5000)
@@ -533,6 +534,7 @@ async def main():
                                 "11: Rotate Brightness 4Chan\n" +
                                 "12: Select Scene 2\n" +
                                 "13: Save Scene 2\n" +
+                                "14: Read ID\n" +
                                 "20: Read Config \n"  ))
 
                 if 1 == idx:
@@ -647,6 +649,29 @@ async def main():
                             print("No config data received")
                     except Exception as e:
                         print(f"Exception reading chunked config: {e}")
+                        await asyncio.sleep_ms(500)
+                        continue
+
+                elif 14 == idx:
+                    #--- Read the ID from the peripheral
+                    try:
+                        print("Reading ID from peripheral...")
+                        id_data = await box_id_char.read()
+                        if id_data:
+                            print(f"ID data received ({len(id_data)} bytes)")
+                            print("Data (bytes):", id_data)
+                            
+                            # Try to decode and print as string
+                            try:
+                                id_str = id_data.decode('utf-8')
+                                print("ID (string):", id_str)
+                                print("Length:", len(id_str))
+                            except Exception as e:
+                                print(f"Could not decode ID as string: {e}")
+                        else:
+                            print("No ID data received")
+                    except Exception as e:
+                        print(f"Exception reading ID: {e}")
                         await asyncio.sleep_ms(500)
                         continue
 

@@ -16,6 +16,7 @@ import ujson
 import neopixel
 import math
 import ConfigObj
+import random
 
 #--- Create a Bluetooth Low Energy (BLE) object
 ble = bluetooth.BLE()
@@ -690,10 +691,11 @@ def on_setCtrlType_rx(data):
 #----------------------------------------------------------------
 #--- on_setID_rx
 #--- Define a callback function to handle a received command
-#--- to turn all LEDs off.
+#--- to set the ID of the controller box.
 #---
-#--- duty_u16 is ratio of duty_cycle / 65535
-#--- So we have to convert 0 to 255 into 0 to 65535
+#--- REMOVE BEFORE FLIGHT - Currently the ID is only read by
+#--- the central so this function is not used. In the future
+#--- we might want to be able to set the ID from the app.
 #----------------------------------------------------------------
 def on_setID_rx(data):
     print("setID Data received: ", data)  # Print the received data
@@ -706,6 +708,45 @@ def on_setID_rx(data):
     #--- REMOVE BEFORE FLIGHT - Do something with the data.
 
 
+#----------------------------------------------------------------
+#--- genrate_id
+#--- When the controller starts up, look for a file with the ID.
+#--- If the file is not found, generate a random 4-digit ID,
+#--- set it in the read ID characteristic, and write it to a 
+#--- file for next time.
+#---
+#----------------------------------------------------------------
+def generate_id():
+
+    #--- Try to read the ID from a file. If the file doesn't exist, 
+    #--- generate a random ID and write it to the file.
+    idStr = ""
+    try:
+        with open("ID.txt", "r") as file:
+            idStr = file.read().strip()
+            print("Read ID from file: ", idStr)
+            ledPeripheral.set_local_ID(idStr)
+
+    except OSError:
+        #--- Failed to open file for read so generate a random ID and write it to the file.
+        random_id_int = random.randint(1, 9999)
+        idStr = "{:04d}".format(random_id_int)
+        print("Generated random ID: ", idStr)
+        ledPeripheral.set_local_ID(idStr)
+
+        try:
+            with open("ID.txt", "w") as file:
+                file.write(idStr)
+                print("Wrote ID to file: ", idStr)
+
+        except OSError:
+            #--- Failed to open file for write
+            print("Failed to open ID file for write")
+        finally:
+            if 'file' in locals():
+                file.close()
+
+
 
 #----------------------------------------------------------
 #--- main
@@ -715,15 +756,24 @@ def main():
     try:
         print("Setting up")
 
-        unique_id_bytes = unique_id()
+    #--- FROM THE SDK: RP2040 does not have an on-board unique identifier 
+    #--- (all instances of RP2040 silicon are identical and have no persistent state). 
+    #--- However, RP2040 boots from serial NOR flash devices which have at least a 
+    #--- 64-bit unique ID as a standard feature, and there is a 1:1 association between 
+    #--- RP2040 and flash, so this is suitable for use as a unique identifier for an RP2040-based board.
+    #---
+    #--- unique_id() returns an 8 byte number.  Instead, we will generate a random 
+    #--- 4 digit number to identify Boondocks module.
 
-        unique_id_hex = ""
+#        unique_id_bytes = unique_id()
+#        unique_id_hex = ""
+#        for b in unique_id_bytes:
+#            unique_id_hex += "{:02X}".format(b) + ":"
+#    #--- This pico's UUID
+#        print("Pico Unique ID: ", unique_id_hex)
 
-        for b in unique_id_bytes:
-            unique_id_hex += "{:02X}".format(b) + ":"
-
-    #--- This pico's UUID
-        print("Pico Unique ID: ", unique_id_hex)
+        #--- Generate a random integer of 1..9999 as zero-padded 4-char string
+        generate_id()
 
         #--- Read the config data from the file if it exists.
         #--- If it doesn't, get the default data. Then write the config
@@ -748,7 +798,6 @@ def main():
                     ledPeripheral.set_sceneSave_callback(on_sceneSave_rx)
                     ledPeripheral.set_sceneSelect_callback(on_sceneSelect_rx)
                     ledPeripheral.set_setCtrlType_callback(on_setCtrlType_rx)
-                    ledPeripheral.set_setID_callback(on_setID_rx)
                 sleep(1)
 
     except KeyboardInterrupt:

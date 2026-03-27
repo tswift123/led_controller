@@ -1,4 +1,9 @@
-# This example demonstrates a UART periperhal.
+#-------------------------------------------------------------------------------
+#--- led_peripheral.py
+#--- This implements a low level bluetooth low energy (BLE) periperhal.
+#--- This peripheral implements the Boondocks LED Controller.  It contains a 
+#--- single service with 8 characteristics:
+#--------------------------------------------------------------------------------
 
 import bluetooth
 import random
@@ -18,6 +23,11 @@ _FLAG_WRITE_NO_RESPONSE = const(0x0004)
 _FLAG_WRITE = const(0x0008)
 _FLAG_NOTIFY = const(0x0010)
 
+#--- Every BLE peripheral by default implements a UART service and two
+#--- characteristics for TX and RX.  However, the use of the UART sercie
+#--- is mutually exclusive with the custom service and characteristics
+#--- that we implement for the LED controller, so these are really used.
+
 _UART_UUID = bluetooth.UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E")
 _UART_TX = (
     bluetooth.UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E"),
@@ -33,7 +43,8 @@ _UART_SERVICE = (
     (_UART_TX, _UART_RX),
 )
 
-# Define UUIDs for the service and characteristics
+#--- Out custom service and characteristics.
+#--- Define UUIDs for the service and characteristics
 SERVICE_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c50")
 CHAR_UUIDS = [
     bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c51"),
@@ -47,7 +58,8 @@ CHAR_UUIDS = [
 ]
 
 
-# Create 4 characteristics; one readable, others writable
+#--- Create 8 characteristics; one readable with notify,
+#--- one simply readable, and the rest writable
 config_char = (CHAR_UUIDS[0], _FLAG_READ | _FLAG_NOTIFY)
 set_led_char = (CHAR_UUIDS[1], _FLAG_WRITE)
 setBright_char = (CHAR_UUIDS[2], _FLAG_WRITE)
@@ -55,15 +67,20 @@ allOff_char = (CHAR_UUIDS[3], _FLAG_WRITE)
 sceneSelect_char = (CHAR_UUIDS[4], _FLAG_WRITE)
 sceneSave_char = (CHAR_UUIDS[5], _FLAG_WRITE)
 ctrlType_char = (CHAR_UUIDS[6], _FLAG_WRITE)
-setID_char = (CHAR_UUIDS[7], _FLAG_WRITE)
+readID_char = (CHAR_UUIDS[7], _FLAG_READ)
 
-# Create the BLE service
-charSet = (config_char, set_led_char, setBright_char, allOff_char, sceneSelect_char, sceneSave_char, ctrlType_char, setID_char)
+#--- Create the BLE service and assign it's characteristics.  
+#--- The service is a tuple of the form (service_uuid, (char1, char2, ...)) 
+#--- where each char is a tuple of the form (char_uuid, flags).  
+#--- The service is then registered with the BLE stack.
+charSet = (config_char, set_led_char, setBright_char, allOff_char, sceneSelect_char, sceneSave_char, ctrlType_char, readID_char)
 service2 = (SERVICE_UUID, charSet)
 SERVICES = (service2,)
 
 
-
+#----------------------------------------
+#--- The LEDPerpherial object definition.
+#----------------------------------------
 class LEDPeripheral:
     def __init__(self, ble, name="BoonLED"):
         self._ble = ble
@@ -76,7 +93,7 @@ class LEDPeripheral:
           self._handle_sceneSelect, 
           self._handle_sceneSave,
           self._handle_setCtrlType,
-          self._handle_setID),) = self._ble.gatts_register_services(SERVICES)
+          self._handle_readID),) = self._ble.gatts_register_services(SERVICES)
         self._connections = set()
 #        self._config_callback = None
         self._setLED_callback = None
@@ -87,6 +104,7 @@ class LEDPeripheral:
         self._setCtrlType_callback = None
         self._setID_callback = None
         self._long_string_data = None
+        self._local_ID_string_data = None
         self._payload = advertising_payload(name=name, services=[SERVICE_UUID])
         self._ble.config(mtu=244)
         self._ble.gatts_set_buffer(self._handle_config, 244)
@@ -96,11 +114,14 @@ class LEDPeripheral:
         self._ble.gatts_set_buffer(self._handle_sceneSelect, 244)
         self._ble.gatts_set_buffer(self._handle_sceneSave, 244)
         self._ble.gatts_set_buffer(self._handle_setCtrlType, 244)
-        self._ble.gatts_set_buffer(self._handle_setID, 244)
-        print("payload:", self._payload)
-        print("Length:", len(self._payload))
+        self._ble.gatts_set_buffer(self._handle_readID, 244)
+#        print("payload:", self._payload)
+#        print("Length:", len(self._payload))
         self._advertise()
 
+    #---------------------------------------------------------
+    #--- The main interrupt service routine for the peripheral.
+    #---------------------------------------------------------
     def _irq(self, event, data):
         # Track connections so we can send notifications.
         if event == _IRQ_CENTRAL_CONNECT:
@@ -131,25 +152,41 @@ class LEDPeripheral:
                 self._sceneSave_callback(value)
             elif value_handle == self._handle_setCtrlType and self._setCtrlType_callback:
                 self._setCtrlType_callback(value)
-            elif value_handle == self._handle_setID and self._setID_callback:
-                self._setID_callback(value)
             else:
                 print("Handle without a callback: ", value_handle)
         elif event == _IRQ_GATTS_READ_REQUEST:
             conn_handle, value_handle = data
-            # Send long string if config characteristic is being read
-            if value_handle == self._handle_config and self._long_string_data:
-                self.send_long_string(self._long_string_data, self._handle_config)
-            else:
-                self.send(b'Missing config')
 
-    def set_local_config(self, config):
-        self._ble.gatts_write(self._handle_config, config)
-            
+            if value_handle == self._handle_config:
+                # Send long string if config characteristic is being read
+                if self._long_string_data:
+                    self.send_long_string(self._long_string_data, self._handle_config)
+                else:
+                    self.send(b'Missing config')
+            elif value_handle == self._handle_readID:
+                if self._local_ID_string_data:
+                    #--- Only need one write to the characteristic because it will
+                    #--- stay there for future reads until it is overwritten.  
+                    #--- The write was done by set_local_ID so we just pass here.
+                    pass
+                else:
+                    #--- A read was done before the local ID was set
+                    self._ble.gatts_write(self._handle_readID, b'Missing ID')
+            else:
+                print("Read request on unexpected handle: ", value_handle)
+
+    #---------------------------------------------------------
+    #--- send
+    #--- Helper function for when send long string has an error
+    #--- because the config is not set.
+    #---------------------------------------------------------
     def send(self, data):
         for conn_handle in self._connections:
             self._ble.gatts_notify(conn_handle, self._handle_config, data)
 
+    #---------------------------------------------------------
+    #--- Helper functions.
+    #---------------------------------------------------------
     def is_connected(self):
         return len(self._connections) > 0
 
@@ -157,9 +194,13 @@ class LEDPeripheral:
         print("Starting advertising")
         self._ble.gap_advertise(interval_us, adv_data=self._payload)
 
-#    def set_config_callback(self, callback):
-#        self._config_callback = callback
 
+    #--------------------------------------------------------------
+    #--- Callback setters for the writable characteristics.  The 
+    #--- phone app (central) will write to these characteristics, 
+    #--- and when it does, the corresponding callback will be called 
+    #--- with the value that was written.
+    #--------------------------------------------------------------
     def set_setLED_callback(self, callback):
         self._setLED_callback = callback
 
@@ -178,27 +219,44 @@ class LEDPeripheral:
     def set_setCtrlType_callback(self, callback):
         self._setCtrlType_callback = callback
 
-    def set_setID_callback(self, callback):
-        self._setID_callback = callback
 
+    #--------------------------------------------------------------
+    #--- set_local_ID
+    #--- Take in the local ID string, save it and write it
+    #--- to the config characteristic so it can be read by the app.
+    #--------------------------------------------------------------
+    def set_local_ID(self, idStr):
+        self._local_ID_string_data = idStr
+        self._ble.gatts_write(self._handle_readID, self._local_ID_string_data.encode('utf-8'))
+            
+
+    #--------------------------------------------------------------
+    #--- set_long_string_data
+    #--- Save the long config string data into a local variable
+    #--- so that it is ready to be transmitted when the central 
+    #--- reads the config characteristic.
+    #--------------------------------------------------------------
     def set_long_string_data(self, long_string):
         #--- Set the long string data to be sent when the config characteristic is read.
         self._long_string_data = long_string
 #        print("Long string (length: {} bytes)".format(len(long_string)))
 #        print("Long string: ", self._long_string_data)
 
+
+    #--------------------------------------------------------------
+    #--- send_long_string
+    #--- Send a long config message string by chunking it into pieces 
+    #--- that fit within the BLE MTU and sending each chunk separately.
+    #---
+    #---    Args:
+    #---        long_string: The string to send (will be encoded to bytes)
+    #---        characteristic_handle: The characteristic handle to write to
+    #---        chunk_size: Maximum bytes per chunk (default 240, leaving room for BLE overhead)
+    #---    Returns:
+    #---        True if all chunks sent successfully, False otherwise
+    #---------------------------------------------------------------
     def send_long_string(self, long_string, characteristic_handle, chunk_size=240):
-        """
-        Send a long string over BLE by chunking it into MTU-sized pieces.
-        
-        Args:
-            long_string: The string to send (will be encoded to bytes)
-            characteristic_handle: The characteristic handle to write to
-            chunk_size: Maximum bytes per chunk (default 240, leaving room for BLE overhead)
-        
-        Returns:
-            True if all chunks sent successfully, False otherwise
-        """
+
         if isinstance(long_string, str):
             data = long_string.encode('utf-8')
         else:
@@ -211,7 +269,7 @@ class LEDPeripheral:
         try:
             for i in range(0, total_length, chunk_size):
                 chunk = data[i:i + chunk_size]
-                print("Chunk to send: ", chunk)
+#                print("Chunk to send: ", chunk)
                 self._ble.gatts_write(characteristic_handle, chunk)
                 
                 # Notify all connected centrals of the data
