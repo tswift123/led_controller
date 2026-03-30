@@ -26,6 +26,10 @@ class ConfigObj:
         "2": "scene2",
         "3": "scene3",
         "4": "scene4",
+        "5": "scene5",
+        "6": "scene6",
+        "7": "scene7",
+        "8": "scene8",
     }
 
     config_dict = {
@@ -157,6 +161,10 @@ class ConfigObj:
         self.scene_names["2"] = "Scene2"
         self.scene_names["3"] = "Scene3"
         self.scene_names["4"] = "Scene4"
+        self.scene_names["5"] = "Scene5"
+        self.scene_names["6"] = "Scene6"
+        self.scene_names["7"] = "Scene7"
+        self.scene_names["8"] = "Scene8"
 
         self.controller1 = {"Name": "Ctrl1", "Type": "RGBW", "ChanNames": {"R": "", "G": "", "B": "", "W": ""}}
         self.controller2 = {"Name": "Ctrl2", "Type": "RGBW", "ChanNames": {"R": "", "G": "", "B": "", "W": ""}}

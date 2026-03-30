@@ -351,6 +351,30 @@ def save_scene(data):
         cfgObj.set_scene_name("4", aName)  
         save_scene_config("4", aName, config_file_path)
 
+    if "5" in data:
+        config_file_path = "Scene5.json"
+        aName = data["5"]
+        cfgObj.set_scene_name("5", aName)  
+        save_scene_config("5", aName, config_file_path)
+
+    if "6" in data:
+        config_file_path = "Scene6.json"
+        aName = data["6"]
+        cfgObj.set_scene_name("6", aName)  
+        save_scene_config("6", aName, config_file_path)
+
+    if "7" in data:
+        config_file_path = "Scene7.json"
+        aName = data["7"]
+        cfgObj.set_scene_name("7", aName)  
+        save_scene_config("7", aName, config_file_path)
+
+    if "8" in data:
+        config_file_path = "Scene8.json"
+        aName = data["8"]
+        cfgObj.set_scene_name("8", aName)  
+        save_scene_config("8", aName, config_file_path)
+
 
 
 
@@ -474,6 +498,22 @@ def load_scene(oneSceneNum):
     elif sceneNum == 4:
         config_file_path = "Scene4.json"
         sceneKey = "4"
+
+    elif sceneNum == 5:
+        config_file_path = "Scene5.json"
+        sceneKey = "5"
+
+    elif sceneNum == 6:
+        config_file_path = "Scene6.json"
+        sceneKey = "6"
+
+    elif sceneNum == 7:
+        config_file_path = "Scene7.json"
+        sceneKey = "7"
+
+    elif sceneNum == 8:
+        config_file_path = "Scene8.json"
+        sceneKey = "8"
 
     else:
         print("Invalid scene number: ", sceneNum)
