@@ -258,7 +258,7 @@ def set_one_brightness(ctrlNum, chanKey, brightValue):
 #--- the name and all LED values and LED brightness out to a file.
 #---
 #----------------------------------------------------------------
-def save_scene_config(sceneID, SceneName, filePath):
+def save_scene_config(sceneID, sceneName, filePath):
 
     localDict = {}
     ledValues = {}
@@ -298,10 +298,14 @@ def save_scene_config(sceneID, SceneName, filePath):
     ledDims["4B"] = rgbw_brightness["4B"]
     ledDims["4W"] = rgbw_brightness["4W"]
 
+    #--- Save the values and brightness to the config object so that they can be
+    #--- included in the config message to the central.
+    cfgObj.set_rgbw_values_and_brightness(sceneID, sceneName, ledValues, ledDims)
+
     cfgData = {}
-    cfgData["Name"] = SceneName
-    cfgData["leds"] = ledValues
-    cfgData["dims"] = ledDims
+    cfgData["Name"] = sceneName
+    cfgData["RGBWValues"] = ledValues
+    cfgData["Brightness"] = ledDims
 
     localDict[sceneID] = cfgData
 
@@ -386,7 +390,7 @@ def save_scene(data):
 #----------------------------------------------------------------
 def set_a_scene(data):
     dims = {}
-    dims = data["dims"]
+    dims = data["Brightness"]
     rgbw_brightness["1R"] = dims["1R"]
     rgbw_brightness["1G"] = dims["1G"]
     rgbw_brightness["1B"] = dims["1B"]
@@ -404,7 +408,7 @@ def set_a_scene(data):
     rgbw_brightness["4B"] = dims["4B"]
     rgbw_brightness["4W"] = dims["4W"]
 
-    ledValues = data["leds"]
+    ledValues = data["RGBWValues"]
     #--- Save for later brightness adjustment
     saved_rgbw_values["1R"] = ledValues["1R"]
     saved_rgbw_values["1G"] = ledValues["1G"]

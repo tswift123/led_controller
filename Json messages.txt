@@ -129,25 +129,57 @@ Send Configuration:
 										}
 						  }
 				   Scenes:
-				            {Scene#:name}
+				            {Scene#:
+							      {Name: name,
+								   RGBWValues: {all 4 channels on all 4 controllers}
+								   Brightness: {all 4 channels on all 4 controllers}
+								  }
+							}
 				  }
-	Where ctrl# is a number from 1 to 4 corresponding to controller 1 through 4
-	name is a custom name provided by the user for the controller
-	type is one of "RGBW", "RGB+1", or "4Chan"
-	c1Name through C4Name are custom names provided by the user for the four channel
+	Where "ctrl#" is a number from 1 to 4 corresponding to controller 1 through 4
+	"Name" is a custom name provided by the user for the controller
+	"Type" is one of "RGBW", "RGB+1", or "4Chan"
+	"c1Name" through "c4Name" are custom names provided by the user for the four channel
 	in each controller.  If the controller is of type RGBW, there is only one name for
 	a channel.  An RGB+1 will have 2 names, and a 4Channel will have 4 names.
-	In SceneNames, Scene# will be a number from 1 to 4 and name will be the custom
-	name the user gave to each saved scene.
-	e.g. {"Ctrl1": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Chan1", "Chan2Name": "Chan2", "Chan3Name": "Chan3", "Chan4Name": "Chan4"}}, "Ctrl2": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}, "Ctrl3": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}, "Ctrl4": {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"Chan1Name": "Red", "Chan2Name": "Green", "Chan3Name": "Blue", "Chan4Name": "White"}}}
+	In Scenes, Scene# will be a number from 1 to 4 corresponding to the scenes that can be defined.
+	"Name: will be the custom name the user gave to each saved scene.
+	"RGBWValues" will be a dictionary of the values in the defined scene.
+	"Brightness" will be a dictionary of the brightness for each LED in the defined scene.
 	
-{"1":{"Name":"1234567890","Type":"4Chan","ChanNames":{"R":"1234567890","G":1234567890","B":"1234567890","W":"1234567890"}},
- "2":{"Name":"1234567890","Type":"4Chan","ChanNames":{"R":"1234567890","G":1234567890","B":"1234567890","W":"1234567890"}},
- "3":{"Name":"1234567890","Type":"4Chan","ChanNames":{"R":"1234567890","G":1234567890","B":"1234567890","W":"1234567890"}},
- "4":{"Name":"1234567890","Type":"4Chan","ChanNames":{"R":"1234567890","G":1234567890","B":"1234567890","W":"1234567890"}},
- "Scenes":{"1":"1234567890","2":"1234567890","3":"1234567890","4":"1234567890"}
- }
-
+	e.g. 
+b'{
+    "3": 
+       {"ChanNames": {"G": "Spot2", "R": "Spot1", "W": "Spot4", "B": "Spot3"}, 
+	   "Name": "SpotCtrl", 
+	   "Type": "4Chan"}, 
+	"4": {"ChanNames": {"G": "", "R": "Cabinets", "W": "", "B": ""}, 
+	     "Name": "CabCtrl", 
+	     "Type": "RGBW"}, 
+	"2": {"ChanNames": {"G": "", "R": "Cabinets", "W": "LeftSpot", "B": ""}, 
+	     "Name": "LeftCtrl", 
+		 "Type": "RGB+1"}, 
+    "Scenes": 
+	    {"1": 
+		    {"Brightness": {"3G": 100, "3W": 100, "1B": 100, "2R": 100, "3R": 100, "2B": 100, "4R": 100, "3B": 100, "4G": 100, "4B": 100, "1R": 100, "4W": 100, "1W": 100, "2G": 100, "1G": 100, "2W": 100}, 
+			 "RGBWValues": {"3G": 0, "3W": 0, "1B": 67, "2R": 255, "3R": 255, "2B": 38, "4R": 255, "3B": 0, "4G": 0, "4B": 41, "1R": 255, "4W": 0, "1W": 0, "2G": 0, "1G": 0, "2W": 0}, 
+			 "Name": "ASceneName"}, 
+		"4": 
+		    {"Brightness": {"3G": 100, "1B": 100, "3W": 100, "2R": 100, "3R": 100, "2B": 100, "3B": 100, "1R": 100, "1G": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100, "2G": 100, "2W": 100, "1W": 100}, 
+			 "RGBWValues": {"3G": 0, "1B": 0, "3W": 0, "2R": 0, "3R": 0, "2B": 0, "3B": 0, "1R": 0, "1G": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0, "2G": 0, "2W": 0, "1W": 0}, 
+			 "Name": "Scene4"}, 
+		"3": 
+		    {"Brightness": {"3G": 100, "1B": 100, "3W": 100, "2R": 100, "3R": 100, "2B": 100, "3B": 100, "1R": 100, "1G": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100, "2G": 100, "2W": 100, "1W": 100}, 
+			 "RGBWValues": {"3G": 0, "1B": 0, "3W": 0, "2R": 0, "3R": 0, "2B": 0, "3B": 0, "1R": 0, "1G": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0, "2G": 0, "2W": 0, "1W": 0}, 
+			 "Name": "Scene3"}, 
+		"2": 
+		    {"Brightness": {"3G": 100, "1B": 100, "3W": 100, "2R": 100, "3R": 100, "2B": 100, "3B": 100, "1R": 100, "1G": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100, "2G": 100, "2W": 100, "1W": 100}, 
+			 "RGBWValues": {"3G": 0, "1B": 0, "3W": 0, "2R": 0, "3R": 0, "2B": 0, "3B": 0, "1R": 0, "1G": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0, "2G": 0, "2W": 0, "1W": 0}, 
+			 "Name": "Scene2"}}, 
+	"1": {"ChanNames": {"G": "", "R": "Cabinets", "W": "", "B": ""}, 
+	      "Name": "CabCtrl", 
+		  "Type": "RGBW"}
+}\n'
 
 ReadID:
 	When an LED controller starts for the very first time, it generates a random
@@ -158,4 +190,4 @@ ReadID:
 	to the phone app will be a byte string that should be decoded to a string.
 	The phone app should save this ID for use in distinguishing between multiple
 	controllers.
-	e.g. b'1234'
+	e.g. b'1234
