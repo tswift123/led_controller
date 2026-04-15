@@ -62,12 +62,13 @@ class ConfigObj:
               "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
             }
 
-    #--- Only 4 scenes for now until the UI is adapted to handle more than 4 scenes.  The config file will
+    #--- Only saved scenes will be added to this dictionary. This is to
+    #--- prevent having the config data show scenes which are all zero.
     allScenes: dict = {
-        "1": scene1,
-        "2": scene2,
-        "3": scene3,
-        "4": scene4,
+#        "1": scene1,
+#        "2": scene2,
+#        "3": scene3,
+#        "4": scene4,
 #        "5": scene5,
 #        "6": scene6,
 #        "7": scene7,
