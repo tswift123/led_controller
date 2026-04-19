@@ -101,44 +101,51 @@ class ConfigObj:
     #--- Both sceneNum and aName must be strings.
     #----------------------------------------------
     def set_rgbw_values_and_brightness(self, sceneID, sceneName, valueDict, brightnessDict):
-        self.allScenes[sceneID]["Name"] = sceneName
-        self.allScenes[sceneID]["RGBWValues"] = valueDict.copy()
-        self.allScenes[sceneID]["Brightness"] = brightnessDict.copy()
 
-        # self.cfg_rgbw_values["1R"] = valueDict["1R"]
-        # self.cfg_rgbw_values["1G"] = valueDict["1G"]
-        # self.cfg_rgbw_values["1B"] = valueDict["1B"]
-        # self.cfg_rgbw_values["1W"] = valueDict["1W"]
-        # self.cfg_rgbw_values["2R"] = valueDict["2R"]
-        # self.cfg_rgbw_values["2G"] = valueDict["2G"]
-        # self.cfg_rgbw_values["2B"] = valueDict["2B"]
-        # self.cfg_rgbw_values["2W"] = valueDict["2W"]
-        # self.cfg_rgbw_values["3R"] = valueDict["3R"]
-        # self.cfg_rgbw_values["3G"] = valueDict["3G"]
-        # self.cfg_rgbw_values["3B"] = valueDict["3B"]
-        # self.cfg_rgbw_values["3W"] = valueDict["3W"]
-        # self.cfg_rgbw_values["4R"] = valueDict["4R"]
-        # self.cfg_rgbw_values["4G"] = valueDict["4G"]
-        # self.cfg_rgbw_values["4B"] = valueDict["4B"]
-        # self.cfg_rgbw_values["4W"] = valueDict["4W"]
+        if sceneID == "1":
+            self.scene1["Name"] = sceneName
+            self.scene1["RGBWValues"] = valueDict.copy()
+            self.scene1["Brightness"] = brightnessDict.copy()
+            self.allScenes["1"] = self.scene1
+        elif sceneID == "2":
+            self.scene2["Name"] = sceneName
+            self.scene2["RGBWValues"] = valueDict.copy()
+            self.scene2["Brightness"] = brightnessDict.copy()
+            self.allScenes["2"] = self.scene2
+        elif sceneID == "3":
+            self.scene3["Name"] = sceneName
+            self.scene3["RGBWValues"] = valueDict.copy()
+            self.scene3["Brightness"] = brightnessDict.copy()
+            self.allScenes["3"] = self.scene3
+        elif sceneID == "4":
+            self.scene4["Name"] = sceneName
+            self.scene4["RGBWValues"] = valueDict.copy()
+            self.scene4["Brightness"] = brightnessDict.copy()
+            self.allScenes["4"] = self.scene4
+        elif sceneID == "5":
+            self.scene5["Name"] = sceneName
+            self.scene5["RGBWValues"] = valueDict.copy()
+            self.scene5["Brightness"] = brightnessDict.copy()
+            self.allScenes["5"] = self.scene5
+        elif sceneID == "6":
+            self.scene6["Name"] = sceneName
+            self.scene6["RGBWValues"] = valueDict.copy()
+            self.scene6["Brightness"] = brightnessDict.copy()
+            self.allScenes["6"] = self.scene6
+        elif sceneID == "7":
+            self.scene7["Name"] = sceneName
+            self.scene7["RGBWValues"] = valueDict.copy()
+            self.scene7["Brightness"] = brightnessDict.copy()
+            self.allScenes["7"] = self.scene7
+        elif sceneID == "8":
+            self.scene8["Name"] = sceneName
+            self.scene8["RGBWValues"] = valueDict.copy()
+            self.scene8["Brightness"] = brightnessDict.copy()
+            self.allScenes["8"] = self.scene8
 
-        # self.cfg_brightness["1R"] = brightnessDict["1R"]
-        # self.cfg_brightness["1G"] = brightnessDict["1G"]
-        # self.cfg_brightness["1B"] = brightnessDict["1B"]
-        # self.cfg_brightness["1W"] = brightnessDict["1W"]
-        # self.cfg_brightness["2R"] = brightnessDict["2R"]
-        # self.cfg_brightness["2G"] = brightnessDict["2G"]
-        # self.cfg_brightness["2B"] = brightnessDict["2B"]
-        # self.cfg_brightness["2W"] = brightnessDict["2W"]
-        # self.cfg_brightness["3R"] = brightnessDict["3R"]
-        # self.cfg_brightness["3G"] = brightnessDict["3G"]
-        # self.cfg_brightness["3B"] = brightnessDict["3B"]
-        # self.cfg_brightness["3W"] = brightnessDict["3W"]
-        # self.cfg_brightness["4R"] = brightnessDict["4R"]
-        # self.cfg_brightness["4G"] = brightnessDict["4G"]
-        # self.cfg_brightness["4B"] = brightnessDict["4B"]
-        # self.cfg_brightness["4W"] = brightnessDict["4W"]
-
+        self.config_dict["Scenes"] = self.allScenes
+        print("All Scenes: ", self.allScenes)
+        print("config dict all scenes: ", self.config_dict["Scenes"])
         self.write_to_file()
 
 
