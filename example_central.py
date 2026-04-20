@@ -214,6 +214,33 @@ def all_off_string():
 
 
 #----------------------------------------------------------------
+#--- power_resistor_string
+#--- Set all 4 controllers to 4Chan. Another function will then
+#--- set each channel on each controller to 100% to draw full power.
+#----------------------------------------------------------------
+def power_resistor_string(ctrlNum):
+
+    chanNames = {}
+    ctrlAttribs = {}
+    ctrl_dict = {}
+
+    #--- {'3':{'Type: '4Chan', 'Name': 'SpotCtrl', 'ChanNames': {'R': 'Spot1', 'G': 'Spot2', 'B': 'Spot3', 'W': 'Spot4'}}}
+    chanNames['R'] = "Spot1"
+    chanNames['G'] = 'Spot2'
+    chanNames['B'] = 'Spot3'
+    chanNames['W'] = 'Spot4'
+    ctrlAttribs['Name'] = "Power" + str(ctrlNum)
+    ctrlAttribs['Type'] = '4Chan'
+    ctrlAttribs['ChanNames'] = chanNames
+    ctrl_dict[1] = ctrlAttribs
+
+    cfgDataStr = json.dumps(ctrl_dict)
+    bcfgDataStr = cfgDataStr.encode('utf-8')
+
+    return bcfgDataStr
+
+
+#----------------------------------------------------------------
 #--- set_ctrl_type_string
 #--- Build the json message to set the controller type, name,
 #--- and channel names for a specified controller number.  Four
@@ -255,6 +282,27 @@ def set_ctrl_type_string(ctrlNum):
         print("Invalid controller number: ", ctrlNum)
 
     cfgDataStr = json.dumps(ctrl_dict)
+    bcfgDataStr = cfgDataStr.encode('utf-8')
+
+    return bcfgDataStr
+
+
+#----------------------------------------------------------------
+#--- build_power_test_led_string
+#--- Build a short json to set all 4 channels on the passed in
+#--- controller to 100% to perform the power test.
+#----------------------------------------------------------------
+def build_power_test_led_string(ctrlVal):
+    #--- {'1':{'W':'255'}}
+    chanVal = {}
+    ctrlStr = {}
+    chanVal["R"] = "255"
+    chanVal["G"] = "255"
+    chanVal["B"] = "255"
+    chanVal["W"] = "255"
+
+    ctrlStr[ctrlVal] = chanVal
+    cfgDataStr = json.dumps(ctrlStr)
     bcfgDataStr = cfgDataStr.encode('utf-8')
 
     return bcfgDataStr
@@ -535,6 +583,8 @@ async def main():
                                 "12: Select Scene 2\n" +
                                 "13: Save Scene 2\n" +
                                 "14: Read ID\n" +
+                                "15: Set Controller Types for Power Test\n" +
+                                "16: Turn on all LEDs for Power Test\n" +
                                 "20: Read Config \n"  ))
 
                 if 1 == idx:
@@ -675,6 +725,33 @@ async def main():
                         await asyncio.sleep_ms(500)
                         continue
 
+                elif 15 == idx:
+                    json_str = power_resistor_string(1)
+                    await set_ctrl_type_char.write(json_str)
+                    await asyncio.sleep_ms(500)
+                    json_str = power_resistor_string(2)
+                    await set_ctrl_type_char.write(json_str)
+                    await asyncio.sleep_ms(500)
+                    json_str = power_resistor_string(3)
+                    await set_ctrl_type_char.write(json_str)
+                    await asyncio.sleep_ms(500)
+                    json_str = power_resistor_string(4)
+                    await set_ctrl_type_char.write(json_str)
+
+                elif 16 == idx:
+                    json_str = build_power_test_led_string(1)                    
+                    await set_led_char.write(json_str)
+                    await asyncio.sleep_ms(500)
+                    json_str = build_power_test_led_string(2)                    
+                    await set_led_char.write(json_str)
+                    await asyncio.sleep_ms(500)
+                    json_str = build_power_test_led_string(3)                    
+                    await set_led_char.write(json_str)
+                    await asyncio.sleep_ms(500)
+                    json_str = build_power_test_led_string(4)                    
+                    await set_led_char.write(json_str)
+                    await asyncio.sleep_ms(500)
+                    
                 else:
                     print("Unexpected input: ", idx)
 
