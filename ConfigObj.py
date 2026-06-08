@@ -101,6 +101,8 @@ class ConfigObj:
     #--- Both sceneNum and aName must be strings.
     #----------------------------------------------
     def set_rgbw_values_and_brightness(self, sceneID, sceneName, valueDict, brightnessDict):
+        if sceneID not in self.allScenes:
+            self.allScenes[sceneID] = {}
         self.allScenes[sceneID]["Name"] = sceneName
         self.allScenes[sceneID]["RGBWValues"] = valueDict.copy()
         self.allScenes[sceneID]["Brightness"] = brightnessDict.copy()
@@ -227,6 +229,11 @@ class ConfigObj:
         try:
             with open(filePath, "r") as file:
                 self.config_dict = json.load(file)
+            if "Scenes" in self.config_dict:
+                self.allScenes = self.config_dict["Scenes"]
+            else:
+                self.allScenes = {}
+                self.config_dict["Scenes"] = self.allScenes
 
         except OSError:
             #--- Failed to open file for read so no
