@@ -322,6 +322,19 @@ def save_scene_config(sceneID, sceneName, filePath):
 
 
 #----------------------------------------------------------------
+#--- refresh_config_bytes
+#--- Recompute the config JSON from cfgObj and push the updated
+#--- bytes into ledPeripheral so reconnecting centrals get
+#--- the current config rather than the startup snapshot.
+#----------------------------------------------------------------
+def refresh_config_bytes():
+    cfgStr = cfgObj.to_json()
+    cfgBytes = cfgStr.encode('utf-8')
+    cfgBytes += b'\n'
+    ledPeripheral.set_long_string_data(cfgBytes)
+
+
+#----------------------------------------------------------------
 #--- save_scene
 #--- Take the passed in json string, parses out the scene name
 #--- and scene ID and writes the name and all LED values and
@@ -334,52 +347,44 @@ def save_scene(data):
  #       print("Found save scene 1")
         config_file_path = "Scene1.json"
         aName = data["1"]
-        cfgObj.set_scene_name("1", aName)
         save_scene_config("1", aName, config_file_path)
 
     if "2" in data:
         config_file_path = "Scene2.json"
         aName = data["2"]
-        cfgObj.set_scene_name("2", aName)
         save_scene_config("2", aName, config_file_path)
 
     if "3" in data:
         config_file_path = "Scene3.json"
         aName = data["3"]
-        cfgObj.set_scene_name("3", aName)  
         save_scene_config("3", aName, config_file_path)
 
     if "4" in data:
         config_file_path = "Scene4.json"
         aName = data["4"]
-        cfgObj.set_scene_name("4", aName)  
         save_scene_config("4", aName, config_file_path)
 
     if "5" in data:
         config_file_path = "Scene5.json"
         aName = data["5"]
-        cfgObj.set_scene_name("5", aName)  
         save_scene_config("5", aName, config_file_path)
 
     if "6" in data:
         config_file_path = "Scene6.json"
         aName = data["6"]
-        cfgObj.set_scene_name("6", aName)  
         save_scene_config("6", aName, config_file_path)
 
     if "7" in data:
         config_file_path = "Scene7.json"
         aName = data["7"]
-        cfgObj.set_scene_name("7", aName)  
         save_scene_config("7", aName, config_file_path)
 
     if "8" in data:
         config_file_path = "Scene8.json"
         aName = data["8"]
-        cfgObj.set_scene_name("8", aName)  
         save_scene_config("8", aName, config_file_path)
 
-
+    refresh_config_bytes()
 
 
 #----------------------------------------------------------------
@@ -730,6 +735,7 @@ def on_setCtrlType_rx(data):
     cfgObj.set_ctrl_name(ctrlNum, localDict[ctrlNum]['Name'])
     chanNames = localDict[ctrlNum]['ChanNames']
     set_channel_names(ctrlNum, chanNames)
+    refresh_config_bytes()
 
 
 #----------------------------------------------------------------
