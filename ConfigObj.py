@@ -20,67 +20,15 @@ class ConfigObj:
     controller2: dict = {"Name": "Ctrl2", "Type": "RGBW", "ChanNames": {"R": "", "G": "", "B": "", "W": ""}}
     controller3: dict = {"Name": "Ctrl3", "Type": "RGBW", "ChanNames": {"R": "", "G": "", "B": "", "W": ""}}
     controller4: dict = {"Name": "Ctrl4", "Type": "RGBW", "ChanNames": {"R": "", "G": "", "B": "", "W": ""}}
-
     
-    scene1: dict = {"Name": "Scene1", 
-              "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-              "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-            }
-    
-    scene2: dict = {"Name": "Scene2", 
-              "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-              "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-            }
-    
-    scene3: dict = {"Name": "Scene3", 
-              "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-              "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-            }
-    
-    scene4: dict = {"Name": "Scene4", 
-              "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-              "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-            }
-    
-    scene5: dict = {"Name": "Scene5", 
-              "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-              "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-            }
-    
-    scene6: dict = {"Name": "Scene6", 
-              "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-              "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-            }
-    
-    scene7: dict = {"Name": "Scene7", 
-              "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-              "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-            }
-    
-    scene8: dict = {"Name": "Scene8", 
-              "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-              "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-            }
-
     #--- Only saved scenes will be added to this dictionary. This is to
     #--- prevent having the config data show scenes which are all zero.
-    allScenes: dict = {
-#        "1": scene1,
-#        "2": scene2,
-#        "3": scene3,
-#        "4": scene4,
-#        "5": scene5,
-#        "6": scene6,
-#        "7": scene7,
-#        "8": scene8
-    }
-
     config_dict: dict = {
         "1": controller1,
         "2": controller2,
         "3": controller3,
         "4": controller4,
-        "Scenes": allScenes
+        "Scenes": {}
     }
 
 
@@ -101,11 +49,11 @@ class ConfigObj:
     #--- Both sceneNum and aName must be strings.
     #----------------------------------------------
     def set_rgbw_values_and_brightness(self, sceneID, sceneName, valueDict, brightnessDict):
-        if sceneID not in self.allScenes:
-            self.allScenes[sceneID] = {}
-        self.allScenes[sceneID]["Name"] = sceneName
-        self.allScenes[sceneID]["RGBWValues"] = valueDict.copy()
-        self.allScenes[sceneID]["Brightness"] = brightnessDict.copy()
+        if sceneID not in self.config_dict["Scenes"]:
+            self.config_dict["Scenes"][sceneID] = {}
+        self.config_dict["Scenes"][sceneID]["Name"] = sceneName
+        self.config_dict["Scenes"][sceneID]["RGBWValues"] = valueDict.copy()
+        self.config_dict["Scenes"][sceneID]["Brightness"] = brightnessDict.copy()
 
         # self.cfg_rgbw_values["1R"] = valueDict["1R"]
         # self.cfg_rgbw_values["1G"] = valueDict["1G"]
@@ -149,7 +97,7 @@ class ConfigObj:
     #--- Both sceneNum and aName must be strings.
     #----------------------------------------------
     def set_scene_name(self, sceneNum, aName):
-        self.allScenes[sceneNum]["Name"] = aName
+        self.config_dict["Scenes"][sceneNum]["Name"] = aName
         self.write_to_file()
 
 
@@ -229,11 +177,6 @@ class ConfigObj:
         try:
             with open(filePath, "r") as file:
                 self.config_dict = json.load(file)
-            if "Scenes" in self.config_dict:
-                self.allScenes = self.config_dict["Scenes"]
-            else:
-                self.allScenes = {}
-                self.config_dict["Scenes"] = self.allScenes
 
         except OSError:
             #--- Failed to open file for read so no
@@ -283,46 +226,8 @@ class ConfigObj:
         self.controller4["ChanNames"]["G"] = "G"
         self.controller4["ChanNames"]["B"] = "B"
         self.controller4["ChanNames"]["W"] = "W"
+        self.config_dict["Scenes"] = {}
 
-        self.scene1 = {"Name": "Scene1", 
-                "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-                "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-                }
-        
-        self.scene2 = {"Name": "Scene2", 
-                "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-                "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-                }
-        
-        self.scene3 = {"Name": "Scene3", 
-                "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-                "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-                }
-        
-        self.scene4 = {"Name": "Scene4", 
-                "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-                "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-                }
-        
-        self.scene5 = {"Name": "Scene5", 
-                "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-                "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-                }
-        
-        self.scene6 = {"Name": "Scene6", 
-                "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-                "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-                }
-        
-        self.scene7 = {"Name": "Scene7", 
-                "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-                "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-                }
-        
-        self.scene8 = {"Name": "Scene8", 
-                "RGBWValues": {"1R": 0, "1G": 0, "1B": 0, "1W": 0, "2R": 0, "2G": 0, "2B": 0, "2W": 0, "3R": 0, "3G": 0, "3B": 0, "3W": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0},
-                "Brightness": {"1R": 100, "1G": 100, "1B": 100, "1W": 100, "2R": 100, "2G": 100, "2B": 100, "2W": 100, "3R": 100, "3G": 100, "3B": 100, "3W": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100}
-                }
 
  #       print("Default config data: ", self.config_dict)
 
