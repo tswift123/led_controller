@@ -146,6 +146,8 @@ def set_channel_names(ctrlNum, jsonData):
         else:
             print("Invalid ctrl type and chan names. Type: ", localCtrlType, " Names: ", jsonData)
 
+    refresh_config_bytes()
+
 
 #------------------------------------------------
 #--- set_rgbw

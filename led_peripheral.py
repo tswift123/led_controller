@@ -61,12 +61,12 @@ CHAR_UUIDS = [
 #--- Create 8 characteristics; one readable with notify,
 #--- one simply readable, and the rest writable
 config_char = (CHAR_UUIDS[0], _FLAG_READ | _FLAG_NOTIFY)
-set_led_char = (CHAR_UUIDS[1], _FLAG_WRITE)
-setBright_char = (CHAR_UUIDS[2], _FLAG_WRITE)
-allOff_char = (CHAR_UUIDS[3], _FLAG_WRITE)
-sceneSelect_char = (CHAR_UUIDS[4], _FLAG_WRITE)
-sceneSave_char = (CHAR_UUIDS[5], _FLAG_WRITE)
-ctrlType_char = (CHAR_UUIDS[6], _FLAG_WRITE)
+set_led_char = (CHAR_UUIDS[1], _FLAG_WRITE_NO_RESPONSE)
+setBright_char = (CHAR_UUIDS[2], _FLAG_WRITE_NO_RESPONSE)
+allOff_char = (CHAR_UUIDS[3], _FLAG_WRITE_NO_RESPONSE)
+sceneSelect_char = (CHAR_UUIDS[4], _FLAG_WRITE_NO_RESPONSE)
+sceneSave_char = (CHAR_UUIDS[5], _FLAG_WRITE_NO_RESPONSE)
+ctrlType_char = (CHAR_UUIDS[6], _FLAG_WRITE_NO_RESPONSE)
 readID_char = (CHAR_UUIDS[7], _FLAG_READ)
 
 #--- Create the BLE service and assign it's characteristics.  
