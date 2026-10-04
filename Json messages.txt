@@ -6,13 +6,15 @@ automatically converted to text by the encoding process.
 Service and Characteristics
 BoonService = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c50")
 ReadConfig  = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c51")   # _FLAG_READ | _FLAG_NOTIFY
-LEDSet      = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c52")   # _FLAG_WRITE
-BrightSet   = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c53")   # _FLAG_WRITE
-AllOff      = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c54")   # _FLAG_WRITE
-SceneSelect = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c55")   # _FLAG_WRITE
-SceneSave   = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c56")   # _FLAG_WRITE
-CtrlTypeSet = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c57")   # _FLAG_WRITE
+LEDSet      = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c52")   # _FLAG_WRITE_NO_RESPONSE
+BrightSet   = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c53")   # _FLAG_WRITE_NO_RESPONSE
+AllOff      = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c54")   # _FLAG_WRITE_NO_RESPONSE
+SceneSelect = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c55")   # _FLAG_WRITE_NO_RESPONSE
+SceneSave   = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c56")   # _FLAG_WRITE_NO_RESPONSE
+CtrlTypeSet = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c57")   # _FLAG_WRITE_NO_RESPONSE
 ReadID      = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c58")   # _FLAG_READ
+SceneDefault = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c59")   # _FLAG_WRITE_NO_RESPONSE
+ControllerName = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c60")   # _FLAG_WRITE_NO_RESPONSE
 
 (Toms note on setting up characteristics in the peripheral)
 If you are actually interested in the data written to a characteristic by the
