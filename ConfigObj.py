@@ -28,7 +28,9 @@ class ConfigObj:
         "2": controller2,
         "3": controller3,
         "4": controller4,
-        "Scenes": {}
+        "Scenes": {},
+        "ControllerName": "None",
+        "ConfigVersion": "1.0"
     }
 
 
@@ -48,46 +50,13 @@ class ConfigObj:
     #--- local config dict and write to file.
     #--- Both sceneNum and aName must be strings.
     #----------------------------------------------
-    def set_rgbw_values_and_brightness(self, sceneID, sceneName, valueDict, brightnessDict):
+    def set_rgbw_values_and_brightness(self, sceneID, sceneName, isDef, valueDict, brightnessDict):
         if sceneID not in self.config_dict["Scenes"]:
             self.config_dict["Scenes"][sceneID] = {}
         self.config_dict["Scenes"][sceneID]["Name"] = sceneName
+        self.config_dict["Scenes"][sceneID]["isDefault"] = isDef
         self.config_dict["Scenes"][sceneID]["RGBWValues"] = valueDict.copy()
         self.config_dict["Scenes"][sceneID]["Brightness"] = brightnessDict.copy()
-
-        # self.cfg_rgbw_values["1R"] = valueDict["1R"]
-        # self.cfg_rgbw_values["1G"] = valueDict["1G"]
-        # self.cfg_rgbw_values["1B"] = valueDict["1B"]
-        # self.cfg_rgbw_values["1W"] = valueDict["1W"]
-        # self.cfg_rgbw_values["2R"] = valueDict["2R"]
-        # self.cfg_rgbw_values["2G"] = valueDict["2G"]
-        # self.cfg_rgbw_values["2B"] = valueDict["2B"]
-        # self.cfg_rgbw_values["2W"] = valueDict["2W"]
-        # self.cfg_rgbw_values["3R"] = valueDict["3R"]
-        # self.cfg_rgbw_values["3G"] = valueDict["3G"]
-        # self.cfg_rgbw_values["3B"] = valueDict["3B"]
-        # self.cfg_rgbw_values["3W"] = valueDict["3W"]
-        # self.cfg_rgbw_values["4R"] = valueDict["4R"]
-        # self.cfg_rgbw_values["4G"] = valueDict["4G"]
-        # self.cfg_rgbw_values["4B"] = valueDict["4B"]
-        # self.cfg_rgbw_values["4W"] = valueDict["4W"]
-
-        # self.cfg_brightness["1R"] = brightnessDict["1R"]
-        # self.cfg_brightness["1G"] = brightnessDict["1G"]
-        # self.cfg_brightness["1B"] = brightnessDict["1B"]
-        # self.cfg_brightness["1W"] = brightnessDict["1W"]
-        # self.cfg_brightness["2R"] = brightnessDict["2R"]
-        # self.cfg_brightness["2G"] = brightnessDict["2G"]
-        # self.cfg_brightness["2B"] = brightnessDict["2B"]
-        # self.cfg_brightness["2W"] = brightnessDict["2W"]
-        # self.cfg_brightness["3R"] = brightnessDict["3R"]
-        # self.cfg_brightness["3G"] = brightnessDict["3G"]
-        # self.cfg_brightness["3B"] = brightnessDict["3B"]
-        # self.cfg_brightness["3W"] = brightnessDict["3W"]
-        # self.cfg_brightness["4R"] = brightnessDict["4R"]
-        # self.cfg_brightness["4G"] = brightnessDict["4G"]
-        # self.cfg_brightness["4B"] = brightnessDict["4B"]
-        # self.cfg_brightness["4W"] = brightnessDict["4W"]
 
         self.write_to_file()
 
@@ -140,6 +109,22 @@ class ConfigObj:
         return self.config_dict[ctrlNum]["Type"]
 
     
+    #----------------------------------------------
+    #--- set_controller_name
+    #--- Name must be a string.
+    #----------------------------------------------
+    def set_controller_name(self, aName):
+#        print("controllerName: ", aName, " type: ", type(aName))
+        #--- Check for an empty string ---
+        if aName.isspace():
+            fixedName = 'None'
+        else:
+            fixedName = aName
+            
+        self.config_dict["ControllerName"] = fixedName
+        self.write_to_file()
+
+
     #----------------------------------------------
     #--- write_to_file
     #--- Both ctrlNum and aType must be strings.
@@ -227,6 +212,8 @@ class ConfigObj:
         self.controller4["ChanNames"]["B"] = "B"
         self.controller4["ChanNames"]["W"] = "W"
         self.config_dict["Scenes"] = {}
+        self.config_dict["ControllerName"] = "None"
+        self.config_dict["ConfigVersion"] = "1.0"
 
 
  #       print("Default config data: ", self.config_dict)
@@ -240,5 +227,17 @@ class ConfigObj:
     def to_json(self) -> str:
         return json.dumps(self.config_dict)
 
+
+    #---------------------------------------------
+    #--- get_dict
+    #--- Return the config dictionary so that the
+    #--- calling routine can add selected scene and
+    #--- relay states if necessary.
+    #--------------------------------------------
+    def get_dict(self):
+        #--- Return a shallow copy of the dictionary in which
+        #--- the nested dictionaries are still references to 
+        #--- the original ones.
+        return self.config_dict.copy()
 
     

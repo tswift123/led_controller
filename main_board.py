@@ -103,6 +103,9 @@ saved_rgbw_values = {
 global cfgObj
 cfgObj = ConfigObj.ConfigObj()
 
+global selectedScene;
+selectedScene = "None"
+
 #------------------------------------------------
 #--- set_channel_names 
 #--- This function is used to set the names of the
@@ -260,7 +263,7 @@ def set_one_brightness(ctrlNum, chanKey, brightValue):
 #--- the name and all LED values and LED brightness out to a file.
 #---
 #----------------------------------------------------------------
-def save_scene_config(sceneID, sceneName, filePath):
+def save_scene_config(sceneID, sceneName, isDef, filePath):
 
     localDict = {}
     ledValues = {}
@@ -302,10 +305,11 @@ def save_scene_config(sceneID, sceneName, filePath):
 
     #--- Save the values and brightness to the config object so that they can be
     #--- included in the config message to the central.
-    cfgObj.set_rgbw_values_and_brightness(sceneID, sceneName, ledValues, ledDims)
+    cfgObj.set_rgbw_values_and_brightness(sceneID, sceneName, isDef, ledValues, ledDims)
 
     cfgData = {}
     cfgData["Name"] = sceneName
+    cfgData["isDefault"] = isDef
     cfgData["RGBWValues"] = ledValues
     cfgData["Brightness"] = ledDims
 
@@ -330,7 +334,25 @@ def save_scene_config(sceneID, sceneName, filePath):
 #--- the current config rather than the startup snapshot.
 #----------------------------------------------------------------
 def refresh_config_bytes():
-    cfgStr = cfgObj.to_json()
+
+    localDict = cfgObj.get_dict()    # shallow copy
+    
+    #--- If the controller has a scene set, add it
+    #--- to the config message so a second phone
+    #--- can get the correct state.
+    if (selectedScene != "None"):
+        localDict["selectedScene"] = selectedScene
+
+    #--- Only include LED states if at least one LED has a non-zero value.
+    if (saved_rgbw_values["1R"] + saved_rgbw_values["1G"] + saved_rgbw_values["1B"] + saved_rgbw_values["1W"] +
+        saved_rgbw_values["2R"] + saved_rgbw_values["2G"] + saved_rgbw_values["2B"] + saved_rgbw_values["2W"] +
+        saved_rgbw_values["3R"] + saved_rgbw_values["3G"] + saved_rgbw_values["3B"] + saved_rgbw_values["3W"] +
+        saved_rgbw_values["4R"] + saved_rgbw_values["4G"] + saved_rgbw_values["4B"] + saved_rgbw_values["4W"] > 0):
+        localDict["LEDValueStates"] = saved_rgbw_values
+        localDict["LEDBrightStates"] = rgbw_brightness
+        
+
+    cfgStr = ujson.dumps(localDict)
     cfgBytes = cfgStr.encode('utf-8')
     cfgBytes += b'\n'
     ledPeripheral.set_long_string_data(cfgBytes)
@@ -345,46 +367,59 @@ def refresh_config_bytes():
 #----------------------------------------------------------------
 def save_scene(data):
  #   print("In save scene. Got data: ", data)
+    if "isDefault" in data:
+        isDef = data["isDefault"]
+    else:
+        isDef = "No"
+
     if "1" in data:
  #       print("Found save scene 1")
         config_file_path = "Scene1.json"
         aName = data["1"]
-        save_scene_config("1", aName, config_file_path)
+        selectedScene = "1"
+        save_scene_config("1", aName, isDef, config_file_path)
 
     if "2" in data:
         config_file_path = "Scene2.json"
         aName = data["2"]
-        save_scene_config("2", aName, config_file_path)
+        selectedScene = "2"
+        save_scene_config("2", aName, isDef, config_file_path)
 
     if "3" in data:
         config_file_path = "Scene3.json"
         aName = data["3"]
-        save_scene_config("3", aName, config_file_path)
+        selectedScene = "3"
+        save_scene_config("3", aName, isDef, config_file_path)
 
     if "4" in data:
         config_file_path = "Scene4.json"
         aName = data["4"]
-        save_scene_config("4", aName, config_file_path)
+        selectedScene = "4"
+        save_scene_config("4", aName, isDef, config_file_path)
 
     if "5" in data:
         config_file_path = "Scene5.json"
         aName = data["5"]
-        save_scene_config("5", aName, config_file_path)
+        selectedScene = "5"
+        save_scene_config("5", aName, isDef, config_file_path)
 
     if "6" in data:
         config_file_path = "Scene6.json"
         aName = data["6"]
-        save_scene_config("6", aName, config_file_path)
+        selectedScene = "6"
+        save_scene_config("6", aName, isDef, config_file_path)
 
     if "7" in data:
         config_file_path = "Scene7.json"
         aName = data["7"]
-        save_scene_config("7", aName, config_file_path)
+        selectedScene = "7"
+        save_scene_config("7", aName, isDef, config_file_path)
 
     if "8" in data:
         config_file_path = "Scene8.json"
         aName = data["8"]
-        save_scene_config("8", aName, config_file_path)
+        selectedScene = "8"
+        save_scene_config("8", aName, isDef, config_file_path)
 
     refresh_config_bytes()
 
@@ -533,20 +568,22 @@ def load_scene(oneSceneNum):
     sceneData = {}
 
     filePath = config_file_path
-    try:
-        with open(filePath, "r") as file:
-            sceneData = ujson.load(file)
-            set_a_scene(sceneData[sceneKey])
+    if sceneNum in [1, 2, 3, 4, 5, 6, 7, 8]:
+        try:
+            with open(filePath, "r") as file:
+                sceneData = ujson.load(file)
+                set_a_scene(sceneData[sceneKey])
+                selectedScene = oneSceneNum
 
-    except OSError:
-        #--- Failed to open file for read so no
-        #--- scene data has been saved. Nothing
-        #--- to do.
-#        print("Failed to open config file for write")
-        pass
-    finally:
-        if 'file' in locals():
-            file.close()
+        except OSError:
+            #--- Failed to open file for read so no
+            #--- scene data has been saved. Nothing
+            #--- to do.
+    #        print("Failed to open config file for write")
+            pass
+        finally:
+            if 'file' in locals():
+                file.close()
 
 
 #----------------------------------------------------------------
@@ -591,6 +628,7 @@ def all_off():
     set_rgbw(2, 0, 0, 0, 0, 100, 100, 100, 100)
     set_rgbw(3, 0, 0, 0, 0, 100, 100, 100, 100)
     set_rgbw(4, 0, 0, 0, 0, 100, 100, 100, 100)
+    selectedScene = "None"
 
 
 
@@ -651,6 +689,10 @@ def on_setBright_rx(data):
     ctrlNum = next(iter(localDict))
 #    print("First key: ", ctrlNum)
 
+    #--- If an individual LED it being changed, that invalidates any
+    #--- scene that was set. So reset.
+    selected_scene = "None"
+    
     if 'R' in localDict[ctrlNum]:
         set_one_brightness(ctrlNum, 'R', localDict[ctrlNum]['R'])
     if 'G' in localDict[ctrlNum]:
@@ -704,6 +746,10 @@ def on_setLED_rx(data):
     ctrlNum = next(iter(localDict))
 #    print("Controller: ", ctrlNum)
 
+    #--- If an individual LED it being set, that invalidates any
+    #--- scene that was set. So reset.
+    selected_scene = "None"
+    
     if 'R' in localDict[ctrlNum]:
         set_one_value(ctrlNum, 'R', localDict[ctrlNum]['R'])
     if 'G' in localDict[ctrlNum]:
@@ -780,10 +826,22 @@ def generate_id():
             ledPeripheral.set_local_ID(idStr)
 
     except OSError:
-        #--- Failed to open file for read so generate a random ID and write it to the file.
-        random_id_int = random.randint(1, 9999)
-        idStr = "{:04d}".format(random_id_int)
-        print("Generated random ID: ", idStr)
+#        #--- Failed to open file for read so generate a random ID and write it to the file.
+#        random_id_int = random.randint(1, 9999)
+#        idStr = "{:04d}".format(random_id_int)
+#        print("Generated random ID: ", idStr)
+#        ledPeripheral.set_local_ID(idStr)
+
+        #--- Failed to open file for read so get the MAC.
+        raw_id_bytes = ledPeripheral.return_mac_bytes()
+        unique_id_hex = ""
+        for b in raw_id_bytes:
+            unique_id_hex += "{:02X}".format(b) + ":"
+        #--- Now have something like 28:CD:C1:0A:37:2C:
+        #--- Get the least significant bytes and not
+        #--- the trailing colon which should be unique.
+        idStr = unique_id_hex[9:17]
+        print("Discovered MAC ID: ", idStr)
         ledPeripheral.set_local_ID(idStr)
 
         try:
@@ -798,6 +856,33 @@ def generate_id():
             if 'file' in locals():
                 file.close()
 
+
+
+#----------------------------------------------
+#--- on_controllerName_rx
+#--- This is the callback function that will be called
+#--- when a controllerName command is received from the 
+#--- phone app (central controller). It will extract 
+#--- the name from the received data and save
+#--- the name and write the config file.
+#----------------------------------------------
+def on_controllerName_rx(data):
+    print(f"Received controller name command: {data}")
+    controllerDict = {}
+    dataStr = data.decode('utf-8')  # Decode bytes to string
+    controllerDict = ujson.loads(dataStr)  # Parse JSON string to dictionary
+    print("Controller name dict: ", controllerDict)
+
+    #--- Should only be one but loop through the dict just in case. 
+    #--- ControllerName is the key and the name is the value.
+    for key, controllerName in controllerDict.items():
+#        print(f"{key}: {controllerName}")
+        cfgObj.set_controller_name(controllerDict['ControllerName'])
+
+    #--- Refresh the long string so that a second connecting app will get
+    #--- the updated config with the new  names, scene names and  values.
+    refresh_config_bytes()
+    
 
 
 #----------------------------------------------------------
@@ -850,6 +935,8 @@ def main():
                     ledPeripheral.set_sceneSave_callback(on_sceneSave_rx)
                     ledPeripheral.set_sceneSelect_callback(on_sceneSelect_rx)
                     ledPeripheral.set_setCtrlType_callback(on_setCtrlType_rx)
+                    ledPeripheral.set_controllerName_callback(on_controllerName_rx)
+                                  
                 sleep(1)
 
     except KeyboardInterrupt:

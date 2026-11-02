@@ -1,0 +1,209 @@
+# Json messages:
+> [!NOTE]: All json messages below show all values being text or chars.  This
+is how the actual message will appear on the receiving end. Integers are 
+automatically converted to text by the encoding process.\
+\
+### Service and Characteristics\
+* **BoonService** = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c50")\
+* **ReadConfig**  = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c51")   # _FLAG_READ | _FLAG_NOTIFY\
+* **LEDSet**      = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c52")   # _FLAG_WRITE_NO_RESPONSE\
+* **BrightSet**   = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c53")   # _FLAG_WRITE_NO_RESPONSE\
+* **AllOff**      = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c54")   # _FLAG_WRITE_NO_RESPONSE\
+* **SceneSelect** = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c55")   # _FLAG_WRITE_NO_RESPONSE\
+* **SceneSave**   = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c56")   # _FLAG_WRITE_NO_RESPONSE\
+* **CtrlTypeSet** = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c57")   # _FLAG_WRITE_NO_RESPONSE\
+* **ReadID**      = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c58")   # _FLAG_READ\
+* **ControllerName** = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c59")   # _FLAG_WRITE_NO_RESPONSE\
+
+>[!NOTE]: The pico only supports 8 characteristics so ControllerName is
+a descriptor of CtrlTypeSet but can be written similar to a characteristic.
+
+
+**Set LED:**\
+    {ID#: {'R': value, 'G': value, 'B': value, 'W': value}}\
+	Where ID# is a number of 1 through 4 corresponding to controller 1 through 4\
+	"R", "G", "B", and "W" correspond to the 4 channels on each controller. \ 
+	Value is the RGBW value from 0 to 255.  \
+	The white value should be mutually exclusive of the RGB values and should 
+	be either 0 or 255 to turn the white LED off or on.  In the case of RGB+1,
+	the RGB LED and the standalone light can be turned off or on independently.
+	If a color is being set on the RGB LED, only the 'R', 'G', and 'B' channels
+	should be sent in the message with the 'W' being left out.  If the +1 light
+	is being turned off or on, a 0 or 255 in the white channel with no other
+    channels being included in the message. In the 4Channel case, the four channels
+	can be turned on or off independently with or value of 0 or 255.  Only the
+	channel being controlled should be included in the message.\
+	e.g.\
+	{'4':{'R':'255', 'G': '0', 'B': '0', 'W': '0'}}    # Controller 4 (RGBW) Channel 1 red\
+	{'3': {'R': '128', 'G': '128', 'B': '128))         # Controller 3 (RGB+1) set RGB LED color\
+	{'3': {'W': '255'))                                # Controller 3 (RGB+1) turn on +1 light\
+	('2': {'B': '255'))                                # Controller 2 (4Chan) turn on 3rd light
+	
+	
+**Set Brightness:**\
+    {Ctrl#: {'R': ndx, 'G': ndx, 'B': ndx, 'W': ndx}}\
+	Where Ctrl# is a number of 1 through 4 corresponding to controller 1 through 4.\
+	"R", "G", "B", and "W" correspond to the 4 channels on each controller.  \
+	ndx is a number between 0 and 3 to indicate 4 different brightness levels.\
+	For an RGBW type controller, the same value should be sent for all 4 channels.
+	For an RGB+1 type controller, there will be separate controls on the phone app
+	for the RGB vs. the +1 channel.  If the brightness control is changed on the 
+	RGB, the three RGB channels should be set to the same value, and only the RGB
+	channels should be specified in the message, not the 'W' channel. If the 
+	brighness on the +1 channel is changed, it's index should be set on the 
+	"W" channel and only the "W" channel should be specified in the message.
+	Likewise, for a 4Channel controller, all four channels can be controlled 
+	independently, so the json message should only contain one of the channels.\
+	e.g. \
+	{'4': {'R': '3', 'G': '3', 'B': '3', 'W': '3'}}    # Controller 4, of type RGBW with\
+	the brightness being set to the max.\
+	{'1': {'W': '0'}}    # Controller 1, of type RGB+1 with the +1 channel being set to minimum\
+	{'2': {'G': '2'}}    # Controller 2, of type 4Chan with the second channel being set to 2.
+
+
+**All Off:**\
+    Turn off all 4 channels on all 4 controllers.  Currently there is
+	no requirement to turn all leds on.  Only one message is needed to
+	turn off all 4 controllers so the "1" in cmd has no meaning.\
+	{cmd: value}\
+	Where cmd is "1"\
+	value is "on" or "off"\
+	e.g.\
+    {'1':'off'}
+	
+**Scene Selection:**\
+	{keyword: value}\
+	Where keyword is one of "LEDScene"\
+	Value is a number of 1 through 4\
+	e.g. {"LEDScene": "1"}
+	
+**Scene Save Configuration:**\
+	{scene#: name, 'isDefault': 'Yes'}\
+	Where scene# is a number from 1 to 4 corresponding to the four scenes that can be saved.\
+	name is the custom name the user entered.  Maximum of 10 characters.\
+	'isDefault' is a hard coded keyword. This indicates if this scene should\
+	be automatically set on startup of the controller.\
+	When Scene Save is invoked, how the LEDs are set on the 4 controllers is saved to a file.\
+	e.g. {'1': 'ABigName10', 'Default', 'Yes'}}
+	
+**Set Controller Type:**\
+    {Ctrl#:{'Type': type, 'Name': 'ABigName10', ChanNames: {'RGBW': 'ABigName10', 'RGB': 'ABigName10', 'R': 'ABigName10', 'G': 'ABigName10', 'B': 'ABigName10', 'W': 'ABigName10'}}}\
+	Where Ctrl# is a number of 1 through 4 corresponding to controller 1 through 4.\
+	Type is one of 'RGBW', 'RGB+1', or '4Chan'\
+	Name is the custom user entered name for the controller. Maximum of 10 characters\
+	ChanNames are the custom user entered names for the 4 channels on the controller. Maximum of 10 characters.\
+	When the type is 'RGBW', ChanNames should only contain the single key, 'RGBW' as all four channels will
+	fall under the same name.  When the type is 'RGB+1', ChanNames should only contain the two keys:
+	'RGB' and 'W' as the first three channels will fall under the same name.  When the type is '4Chan',
+	ChanNames should contain the four keys: 'R', 'G', 'B', and 'W' with their respective names.\
+	
+    e.g.\
+	{'1': {'Type': 'RGBW', 'Name': 'Cabinet', 'ChanNames': {'RGBW': 'Cabinet'}}}\
+	{'2': {'Type': 'RGB+1', 'Name': 'Cabinet', 'ChanNames': {'RGB': 'CabLeft', 'W':'CabRight'}}}\
+	{'1': {'Type': '4Chan', 'Name': 'Cabinets', 'ChanNames': {'R':'Cabinet1', 'G':'Cabinet2', 'B':'Cabinet3', 'W':'Cabinet4'}}}\
+	
+**ControllerName:**\
+    This will set a user defined name for the entire device.\
+    {'ControllerName': value}\
+    where 'ControllerName' is hard coded keyword.
+	value is the user defined string.  Currently there is no limit on it's length.\
+	e.g.\
+	{'ControllerName': 'ABigName'}\
+
+**Send Configuration:**\
+    To get the configuration message, the central first has to subscribe to the notify attribute
+	of the config characteristic.  Then when the central wants the data, it writes a simple
+	message to the config characteristic.  Then,each notify result will contain a chunk of
+	the config message. The last chunk will be terminated by a '\n' byte. The central should
+	append the chunks while looking for the '\n'. The central should strip the '\n' before 
+	appending the last chunk.  Then the message will be complete and a valid json message.
+	
+    The message below is the return message containing the configuration that will 
+	come to the phone app from the controller when the app first connects to the 
+	controller in order to set the types and names in the app.\
+	              {ctrl#: \
+				          {"Name": name,\
+						   "Type": type,\
+						   "ChanNames": \
+						                {"R": c1Name,\
+										 "G": c2Name,\
+										 "B": c3Name,\
+										 "W": c4Name\
+										}\
+						  }\
+				   Scenes:\
+				            {Scene#:\
+							      {"Name": name,\
+						           "Default": Yes/No\
+								   "RGBWValues": {all 4 channels on all 4 controllers}\
+								   "Brightness": {all 4 channels on all 4 controllers}\
+								  }\
+							}\
+				  }\
+	Where "ctrl#" is a number from 1 to 4 corresponding to controller 1 through 4\
+	"Name" is a custom name provided by the user for the controller\
+	"Type" is one of "RGBW", "RGB+1", or "4Chan"\
+	"c1Name" through "c4Name" are custom names provided by the user for the four channel
+	in each controller.  If the controller is of type RGBW, there is only one name for
+	a channel.  An RGB+1 will have 2 names, and a 4Channel will have 4 names.
+	In Scenes, Scene# will be a number from 1 to 4 corresponding to the scenes that can be defined.\
+	"Name: will be the custom name the user gave to each saved scene.\
+	"Default" will be either Yes or No\
+	"RGBWValues" will be a dictionary of the values in the defined scene.\
+	"Brightness" will be a dictionary of the brightness for each LED in the defined scene.\
+	\
+	e.g.\ 
+b'{\
+    "3": \
+       {"ChanNames": {"G": "Spot2", "R": "Spot1", "W": "Spot4", "B": "Spot3"}, \
+	   "Name": "SpotCtrl", \
+	   "Type": "4Chan"}, \
+	"4": {"ChanNames": {"G": "", "R": "Cabinets", "W": "", "B": ""}, \
+	     "Name": "CabCtrl", \
+	     "Type": "RGBW"}, \
+	"2": {"ChanNames": {"G": "", "R": "Cabinets", "W": "LeftSpot", "B": ""}, \
+	     "Name": "LeftCtrl", \
+		 "Type": "RGB+1"}, \
+    "Scenes": \
+	    {"1": \
+		    {"Brightness": {"3G": 100, "3W": 100, "1B": 100, "2R": 100, "3R": 100, "2B": 100, "4R": 100, "3B": 100, "4G": 100, "4B": 100, "1R": 100, "4W": 100, "1W": 100, "2G": 100, "1G": 100, "2W": 100}, \
+			 "RGBWValues": {"3G": 0, "3W": 0, "1B": 67, "2R": 255, "3R": 255, "2B": 38, "4R": 255, "3B": 0, "4G": 0, "4B": 41, "1R": 255, "4W": 0, "1W": 0, "2G": 0, "1G": 0, "2W": 0}, \
+			 "Name": "ASceneName"},\
+			 "Default: "Yes"\
+		"4": \
+		    {"Brightness": {"3G": 100, "1B": 100, "3W": 100, "2R": 100, "3R": 100, "2B": 100, "3B": 100, "1R": 100, "1G": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100, "2G": 100, "2W": 100, "1W": 100}, \
+			 "RGBWValues": {"3G": 0, "1B": 0, "3W": 0, "2R": 0, "3R": 0, "2B": 0, "3B": 0, "1R": 0, "1G": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0, "2G": 0, "2W": 0, "1W": 0}, \
+			 "Name": "Scene4", \
+			 "Default": "No"},\
+		"3": \
+		    {"Brightness": {"3G": 100, "1B": 100, "3W": 100, "2R": 100, "3R": 100, "2B": 100, "3B": 100, "1R": 100, "1G": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100, "2G": 100, "2W": 100, "1W": 100}, \
+			 "RGBWValues": {"3G": 0, "1B": 0, "3W": 0, "2R": 0, "3R": 0, "2B": 0, "3B": 0, "1R": 0, "1G": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0, "2G": 0, "2W": 0, "1W": 0}, \
+			 "Name": "Scene3"}, \
+			 "Default": "No"},\
+		"2": \
+		    {"Brightness": {"3G": 100, "1B": 100, "3W": 100, "2R": 100, "3R": 100, "2B": 100, "3B": 100, "1R": 100, "1G": 100, "4R": 100, "4G": 100, "4B": 100, "4W": 100, "2G": 100, "2W": 100, "1W": 100}, \
+			 "RGBWValues": {"3G": 0, "1B": 0, "3W": 0, "2R": 0, "3R": 0, "2B": 0, "3B": 0, "1R": 0, "1G": 0, "4R": 0, "4G": 0, "4B": 0, "4W": 0, "2G": 0, "2W": 0, "1W": 0}, \
+			 "Name": "Scene2", \
+			 "Default": "No"},\
+	"1": {"ChanNames": {"G": "", "R": "Cabinets", "W": "", "B": ""}, \
+	      "Name": "CabCtrl", \
+		  "Type": "RGBW"}\
+}\n'\
+\
+    The message to write to kick off the sending of the config message doesn't \
+	matter and can be as simple as {'1': '1'}\
+
+**ReadID:**
+	When an LED controller starts for the very first time, it reads is own MAC
+	address and uses the last 8 characters of that as an ID. This will allow
+	the controllers to be unique and give a way to register them if desired.
+	It writes this ID to a file on the pico and writes it to the ReadID 
+	characteristic.  After that, each time the controller starts up, it reads
+	the file and makes the ID available on the ReadID characteristic.  The ID
+	is aa 8 character string and when transmitted to the phone app will be a 
+	byte string that should be decoded to a string. The phone app should save
+	this ID for use in distinguishing between multiple controllers.
+	NOTE: The iOS generates it's own random long ID for whatever controller it
+	connects to via bluetooth. The last 8 characters of this ID will be used
+	instead of the MAC from the physical device.\
+	e.g. b'1234

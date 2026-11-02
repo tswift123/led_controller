@@ -30,6 +30,7 @@ SELECT_SCENE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c55")
 SAVE_SCENE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c56")
 SET_CTRL_TYPE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c57")
 BOX_ID_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c58")
+SET_CONTROLLER_NAME_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c59")
 
 SCAN_DURATION_MS = const(5000)
 SCAN_INTERVAL_US = const(30000)
@@ -292,6 +293,22 @@ def build_json_string():
     return bcfgDataStr
 
 
+#----------------------------------------------------------------
+#--- build_set_controller_name_json_string
+#--- Build a short json string to test the write functionality.
+#--- The name will be passed in.
+#----------------------------------------------------------------
+def build_set_controller_name_json_string(ctrlName):
+	#--- e.g. {ID#: Name}
+
+    relayDict = {}
+    relayDict['ControllerName'] = ctrlName
+    cfgDataStr = json.dumps(relayDict)
+    bcfgDataStr = cfgDataStr.encode('utf-8')
+
+    return bcfgDataStr
+
+
 #-------------------------------------------------------
 #--- read_chunked_config
 #--- This function will request and read a chunked long string
@@ -453,6 +470,7 @@ async def main():
                 save_scene_char = await led_service.characteristic(SAVE_SCENE_CHAR_UUID)
                 set_ctrl_type_char = await led_service.characteristic(SET_CTRL_TYPE_CHAR_UUID)
                 box_id_char = await led_service.characteristic(BOX_ID_CHAR_UUID)
+                set_controller_name_char = await set_ctrl_type_char.descriptor(SET_CONTROLLER_NAME_CHAR_UUID)
             except asyncio.TimeoutError:
                 print("Timeout discovering services/characteristics")
                 await asyncio.sleep_ms(5000)
@@ -481,7 +499,8 @@ async def main():
                                 "11: Rotate Brightness 4Chan\n" +
                                 "12: Select Scene 2\n" +
                                 "13: Save Scene 2\n" +
-                                "14: Read ID\n" ))
+                                "14: Read ID\n" +
+                                "15: Set Controller Name\n" ))
 
                 if 1 == idx:
                     #--- Write json byte string to peripheral
@@ -596,6 +615,12 @@ async def main():
                         print(f"Exception reading ID: {e}")
                         await asyncio.sleep_ms(500)
                         continue
+
+                elif 15 == idx:
+                    boxName = input("Enter controller name: ")
+                    json_str = build_set_controller_name_json_string(boxName)
+                    print("Ctrl Name string: ", json_str)
+                    await set_controller_name_char.write(json_str)
 
                 else:
                     print("Unexpected input: ", idx)

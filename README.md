@@ -25,7 +25,7 @@ implemented on the phone app.  It is my belief that you can communicate
 with a peripheral either using the UART service or or a service with
 specifically designed characteristics, but not both.
 
-**Json messages.txt** - This file describes the service and characteristics
+**Json messages.md** - This file describes the service and characteristics
 UUIDs and the json messages that will be used to interact with them.
 
 **main_board.py** - This file is the main implementation of the code running

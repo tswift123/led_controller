@@ -23,6 +23,8 @@ _FLAG_WRITE_NO_RESPONSE = const(0x0004)
 _FLAG_WRITE = const(0x0008)
 _FLAG_NOTIFY = const(0x0010)
 
+_MTU = const(244)
+
 #--- Every BLE peripheral by default implements a UART service and two
 #--- characteristics for TX and RX.  However, the use of the UART sercie
 #--- is mutually exclusive with the custom service and characteristics
@@ -55,18 +57,22 @@ CHAR_UUIDS = [
     bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c56"),
     bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c57"),
     bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c58"),
+    bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c59"),
 ]
 
+#--- Set flags for the controller name descriptor
+#--- Add iot as a descriptor of the ctrlType_char
+controller_name_char = (CHAR_UUIDS[8], _FLAG_WRITE | _FLAG_WRITE_NO_RESPONSE)
 
 #--- Create 8 characteristics; one readable with notify,
 #--- one simply readable, and the rest writable
-config_char = (CHAR_UUIDS[0], _FLAG_READ | _FLAG_NOTIFY)
+config_char = (CHAR_UUIDS[0], _FLAG_READ | _FLAG_NOTIFY | _FLAG_WRITE_NO_RESPONSE)
 set_led_char = (CHAR_UUIDS[1], _FLAG_WRITE_NO_RESPONSE)
 setBright_char = (CHAR_UUIDS[2], _FLAG_WRITE_NO_RESPONSE)
 allOff_char = (CHAR_UUIDS[3], _FLAG_WRITE_NO_RESPONSE)
 sceneSelect_char = (CHAR_UUIDS[4], _FLAG_WRITE_NO_RESPONSE)
 sceneSave_char = (CHAR_UUIDS[5], _FLAG_WRITE_NO_RESPONSE)
-ctrlType_char = (CHAR_UUIDS[6], _FLAG_WRITE_NO_RESPONSE)
+ctrlType_char = (CHAR_UUIDS[6], _FLAG_WRITE_NO_RESPONSE, (controller_name_char,))
 readID_char = (CHAR_UUIDS[7], _FLAG_READ)
 
 #--- Create the BLE service and assign it's characteristics.  
@@ -93,6 +99,7 @@ class LEDPeripheral:
           self._handle_sceneSelect, 
           self._handle_sceneSave,
           self._handle_setCtrlType,
+          self._handle_controllerName,
           self._handle_readID),) = self._ble.gatts_register_services(SERVICES)
         self._connections = set()
 #        self._config_callback = None
@@ -105,16 +112,18 @@ class LEDPeripheral:
         self._setID_callback = None
         self._long_string_data = None
         self._local_ID_string_data = None
+        self._controllerName_callback = None
         self._payload = advertising_payload(name=name, services=[SERVICE_UUID])
-        self._ble.config(mtu=244)
-        self._ble.gatts_set_buffer(self._handle_config, 244)
-        self._ble.gatts_set_buffer(self._handle_setLED, 244)
-        self._ble.gatts_set_buffer(self._handle_setBright, 244)
-        self._ble.gatts_set_buffer(self._handle_allOff, 244)
-        self._ble.gatts_set_buffer(self._handle_sceneSelect, 244)
-        self._ble.gatts_set_buffer(self._handle_sceneSave, 244)
-        self._ble.gatts_set_buffer(self._handle_setCtrlType, 244)
-        self._ble.gatts_set_buffer(self._handle_readID, 244)
+        self._ble.config(mtu=_MTU)
+        self._ble.gatts_set_buffer(self._handle_config, _MTU)
+        self._ble.gatts_set_buffer(self._handle_setLED, _MTU)
+        self._ble.gatts_set_buffer(self._handle_setBright, _MTU)
+        self._ble.gatts_set_buffer(self._handle_allOff, _MTU)
+        self._ble.gatts_set_buffer(self._handle_sceneSelect, _MTU)
+        self._ble.gatts_set_buffer(self._handle_sceneSave, _MTU)
+        self._ble.gatts_set_buffer(self._handle_setCtrlType, _MTU)
+        self._ble.gatts_set_buffer(self._handle_readID, _MTU)
+        self._ble.gatts_set_buffer(self._handle_controllerName, _MTU)
 #        print("payload:", self._payload)
 #        print("Length:", len(self._payload))
         self._advertise()
@@ -152,18 +161,20 @@ class LEDPeripheral:
                 self._sceneSave_callback(value)
             elif value_handle == self._handle_setCtrlType and self._setCtrlType_callback:
                 self._setCtrlType_callback(value)
-            else:
-                print("Handle without a callback: ", value_handle)
-        elif event == _IRQ_GATTS_READ_REQUEST:
-            conn_handle, value_handle = data
-
-            if value_handle == self._handle_config:
+            elif value_handle == self._handle_controllerName and self._controllerName_callback:
+                self._controllerName_callback(value)
+            #--- Sending the config message is now triggered by a write.
+            elif value_handle == self._handle_config:
                 # Send long string if config characteristic is being read
                 if self._long_string_data:
                     self.send_long_string(self._long_string_data, self._handle_config)
                 else:
                     self.send(b'Missing config')
-            elif value_handle == self._handle_readID:
+            else:
+                print("Handle without a callback: ", value_handle)
+        elif event == _IRQ_GATTS_READ_REQUEST:
+            conn_handle, value_handle = data
+            if value_handle == self._handle_readID:
                 if self._local_ID_string_data:
                     #--- Only need one write to the characteristic because it will
                     #--- stay there for future reads until it is overwritten.  
@@ -219,7 +230,24 @@ class LEDPeripheral:
     def set_setCtrlType_callback(self, callback):
         self._setCtrlType_callback = callback
 
+    def set_controllerName_callback(self, callback):
+        self._controllerName_callback = callback
 
+    def set_configWrite_callback(self, callback):
+        self._configWrite_callback = callback
+
+
+    #--------------------------------------------------------------
+    #--- return_mac_bytes
+    #--- This function gets the tuple of addr_type and addr of the
+    #--- MAC from the config function.  It returns the raw bytes of
+    #--- the address to be used as a unique ID.
+    #--------------------------------------------------------------
+    def return_mac_bytes(self):
+        idTuple = self._ble.config('mac')
+        raw_bytes = idTuple[1]
+        return raw_bytes
+    
     #--------------------------------------------------------------
     #--- set_local_ID
     #--- Take in the local ID string, save it and write it

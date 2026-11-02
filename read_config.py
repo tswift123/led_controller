@@ -9,6 +9,7 @@ import random
 import struct
 import time
 import micropython
+import json
 
 from ble_advertising import decode_services, decode_name
 
@@ -56,6 +57,7 @@ SELECT_SCENE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c55")
 SAVE_SCENE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c56")
 SET_CTRL_TYPE_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c57")
 SET_BOX_ID_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c58")
+SET_CONTROLLER_NAME_CHAR_UUID = bluetooth.UUID("b00d0c55-1111-2222-3333-0000b00d0c59")
 
 SCAN_DURATION_MS = const(5000)
 SCAN_INTERVAL_US = const(30000)
@@ -241,6 +243,13 @@ class BLEConfigReadCentral:
         self._read_callback = callback
         self._ble.gattc_read(self._conn_handle, self._value_handle)
 
+    def write(self):
+        if not self.is_connected():
+            return
+        json_str = self.build_simple_json_string()
+        self._ble.gattc_write(self._conn_handle, self._value_handle, json_str)
+
+
     # Sets a callback to be invoked when the device notifies us.
     def on_notify(self, callback):
         self._notify_callback = callback
@@ -273,6 +282,20 @@ class BLEConfigReadCentral:
         if not self.chunks:
             return b''
         return b''.join(self.chunks)
+
+
+    #----------------------------------------------------------------
+    #--- build_simple_json_string
+    #--- Build a short json string to test the write functionality.
+    #----------------------------------------------------------------
+    def build_simple_json_string(self):
+        #--- e.g. {"1": "1"}
+        relayDict = {}
+        relayDict["1"] = "1"
+        cfgDataStr = json.dumps(relayDict)
+        bcfgDataStr = cfgDataStr.encode('utf-8')
+
+        return bcfgDataStr
 
 
 def demo():
@@ -314,7 +337,10 @@ def demo():
                     #--- This callback prints 148.82.  I don't know
                     #--- what that means but I think it is the
                     #--- numeric value of some characters.
-                    central.read(callback=print)
+#                    central.read(callback=print)
+
+                    #--- Test starting notify by write
+                    central.write()
 
                 else:
                     print("Invalid selection. Try again.")
